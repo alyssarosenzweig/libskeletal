@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 
-rgb = cv2.imread("render_0_rgb.png")
-parts = cv2.imread("render_0_parts.png")
+prefix = "/home/alyssa/synthposes/dataset/render_"
 
 def skin(rgb):
     channels = cv2.split(rgb)
@@ -19,7 +18,19 @@ def findPart(parts, color):
     return cv2.inRange(parts, color - delta, color + delta)
 
 def index(mat, pt):
-    return mat[pt[0], pt[1]]
+    apt = pt
+
+    if pt[0] < 0:
+        apt[0] = 0
+    elif pt[0] > np.size(mat, 1):
+        apt[0] = mat[pt]
+        
+    if pt[1] < 0:
+        apt[1] = 0
+    elif pt[1] > np.size(mat, 0):
+        apt[1] = mat[pt]
+
+    return mat[apt[0], apt[1]]
 
 def delta(mats, weights, pt, u, v):
     (rgb, skin, foreground) = mats
@@ -29,10 +40,14 @@ def delta(mats, weights, pt, u, v):
     skinScore  = index(skin, left)**2       - index(skin, right)**2
     fgScore    = index(foreground, left)**2 - index(foreground, right)**2
 
-    print(np.dot(np.array([1,2,3]), np.array([2,3,4])))
     return np.dot(np.array([colorScore, skinScore, fgScore]), weights)
 
-d = delta((cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb)),
+def process(number):
+    rgb = cv2.imread(prefix + str(number) + "_rgb.png")
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb))
+
+
+d = delta(process(0),
         np.array([1, 10, 100]),
         np.array([500, 500]),
         np.array([-8, 0]), np.array([0, 0]))
