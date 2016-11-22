@@ -1,6 +1,7 @@
 import random, math
 import cv2
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier 
 
 prefix = "/home/alyssa/synthposes/dataset/render_"
 
@@ -69,7 +70,7 @@ def randpoint(img):
 
 DELTA_WEIGHTS = np.array([1, 10, 100])
 
-def sample(img, pt, off):
+def sample(img, pt, offsets):
     out = []
 
     for off in offsets:
@@ -97,6 +98,11 @@ def train(features):
     return (clf, offsets)
 
 (clf, offsets) = train(1)
+
+print(clf)
+print(offsets)
+
+print(clf.predict(sample(process(0), np.array([500, 500]), offsets)))
 
 #d = delta(process(0),
 #        DELTA_WEIGHTS,
