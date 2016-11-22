@@ -86,23 +86,38 @@ def train(features):
     X = []
     Y = []
 
-    for i in range(1, 100):
+    for i in range(1, 5000):
         pt = randpoint(img[0])
 
         Y.append(isPart(img[3], pt, np.array([0x00, 0x00, 0x5B])))
         X.append(sample(img, pt, offsets))
 
-    clf = RandomForestClassifier(n_estimators=10)
+    clf = RandomForestClassifier(n_estimators=3)
     clf = clf.fit(X, Y)
 
     return (clf, offsets)
 
-(clf, offsets) = train(1)
+def visualize(model):
+    (clf, offsets) = model
 
-print(clf)
-print(offsets)
+    img = process(0)
+    vis = img[0].copy()
 
-print(clf.predict(sample(process(0), np.array([500, 500]), offsets)))
+    for x in range(0, 1023):
+        for y in range(0, 1023):
+            s = sample(img, np.array([x, y]), offsets)
+            vis[x, y] = clf.predict(np.array(s).reshape(1, -1))
+        cv2.imshow("Vis", vis)
+        cv2.waitKey(2)
+        print y
+
+    return vis
+
+print("Training...")
+model = train(50)
+print("Running...")
+cv2.imshow("Visualization", visualize(model))
+cv2.waitKey(0)
 
 #d = delta(process(0),
 #        DELTA_WEIGHTS,
