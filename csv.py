@@ -69,22 +69,34 @@ def randpoint(img):
 
 DELTA_WEIGHTS = np.array([1, 10, 100])
 
-def sample():
-    features = 10
-    print("isHead," + ",".join(map(lambda q: "d" + str(q), xrange(1, features))))
+def sample(img, pt, off):
+    out = []
+
+    for off in offsets:
+        out.append(delta(img, DELTA_WEIGHTS, pt, off))
+
+    return out
+
+def train(features):
     offsets = map(randvec, [None] * features)
 
     img = process(0)
 
-    for i in range(1, 10000):
+    X = []
+    Y = []
+
+    for i in range(1, 100):
         pt = randpoint(img[0])
 
-        out = [isPart(img[3], pt, np.array([0x00, 0x00, 0x5B]))]
+        Y.append(isPart(img[3], pt, np.array([0x00, 0x00, 0x5B])))
+        X.append(sample(img, pt, offsets))
 
-        for off in offsets:
-            out.append(delta(img, DELTA_WEIGHTS, pt, off))
+    clf = RandomForestClassifier(n_estimators=10)
+    clf = clf.fit(X, Y)
 
-        print(",".join(map(str, out)))
+    return (clf, offsets)
+
+(clf, offsets) = train(1)
 
 #d = delta(process(0),
 #        DELTA_WEIGHTS,
@@ -93,7 +105,7 @@ def sample():
 
 #print(d)
 
-sample()
+
 
 # cv2.imshow("parts", parts)
 # cv2.imshow("skin", skin(rgb))
