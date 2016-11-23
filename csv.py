@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 prefix = "/home/alyssa/synthposes/dataset/render_"
 
+SIZE = 1024
 def skin(rgb):
     chans = cv2.split(rgb)
     return 1 * (((chans[2] * 0.6 - chans[1] * 0.3 - chans[0] * 0.3) - 10) > 0)
@@ -14,7 +15,7 @@ def foreground(rgb):
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]
 
 def cap(x):
-    return x if (x > 0 and x < 256) else (0 if x < 0 else 255)
+    return x if (x > 0 and x < SIZE) else (0 if x < 0 else SIZE - 1)
 
 def index(mat, pt):
     try:
@@ -33,8 +34,8 @@ def delta(gamma, pt, offset):
     return index(gamma, left) - index(gamma, right)
 
 def process(number):
-    rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (0, 0), fx=0.25, fy=0.25)
-    parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (0, 0), fx=0.25, fy=0.25)
+    rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (0, 0), fx=1, fy=1)
+    parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (0, 0), fx=1, fy=1)
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.cvtColor(parts, cv2.COLOR_BGR2GRAY))
 
 def randoffset(sd):
@@ -47,7 +48,7 @@ def randvec(_):
         return (randoffset(100), np.array([0, 0]))
 
 def randpoint(img):
-    return np.array([int(random.uniform(0, 256)), int(random.uniform(0, 256))])
+    return np.array([int(random.uniform(0, SIZE)), int(random.uniform(0, SIZE))])
 
 def sample(gamma, pt, offsets):
     return map(lambda off: delta(gamma, pt, off), offsets)
@@ -69,13 +70,13 @@ def train(clf, features, no):
         X.append(sample(gamma, pt, features))
 
 def ugrabA(offset):
-    return 256 if offset < 0 else 256 - offset
+    return SIZE if offset < 0 else SIZE - offset
 
 def lgrabA(offset):
     return 0 if offset > 0 else -offset
 
 def ugrabB(offset):
-    return 256 if offset > 0 else 256 + offset
+    return SIZE if offset > 0 else SIZE + offset
 
 def lgrabB(offset):
     return offset if offset > 0 else 0
@@ -85,32 +86,32 @@ def select(w, h, mat, offset, C):
     out[lgrabA(offset[0]):ugrabA(offset[0]), lgrabA(offset[1]):ugrabA(offset[1])] = mat[lgrabB(offset[0]):ugrabB(offset[0]), lgrabB(offset[1]):ugrabB(offset[1])]
     return out
 
-def visualize(model):
+def visualize(model, count):
     (clf, offsets) = model
 
     img = process(0)
     vis = img[0].copy()
-    samples = np.zeros((256, 256, 15))
+    samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
 
     print "Sampling..."
-    for f in xrange(0, 15):
+    for f in xrange(0, count):
         (u, v) = offsets[f]
-        U = select(256, 256, gamma, u, 255)
-        V = select(256, 256, gamma, v, 255)
+        U = select(SIZE, SIZE, gamma, u, 255)
+        V = select(SIZE, SIZE, gamma, v, 255)
 
         samples[:, :, f] = U - V
 
     print "Predicting..."
-    vis = clf.predict(samples.reshape(256*256, 15)).reshape(256,256)
+    vis = clf.predict(samples.reshape(SIZE*SIZE, count)).reshape(SIZE, SIZE)
     return vis
 
 print("Training...")
 
-clf = RandomForestClassifier(n_estimators=1)
+clf = RandomForestClassifier(n_estimators=3)
 
-features = generateFeatures(15)
-for image in range(0, 10):
+features = generateFeatures(30)
+for image in range(0, 20):
     print "Image " + str(image)
     train(clf, features, image)
 
@@ -120,7 +121,7 @@ clf = clf.fit(X, Y)
 model = (clf, features)
 
 print("Running...")
-visualization = visualize(model)
+visualization = visualize(model, 30)
 
 print("Visualizing...")
 cv2.imshow("Visualization", visualization)
