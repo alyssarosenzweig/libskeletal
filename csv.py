@@ -43,7 +43,7 @@ def process(number):
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), parts)
 
 def randoffset(sd):
-    return np.array([int(random.gauss(0, sd)), int(random.gauss(0, sd))])
+    return np.array([int(random.uniform(-sd, sd)), int(random.uniform(-sd, sd))])
 
 def randvec(_):
     if random.random() > 0.5:
