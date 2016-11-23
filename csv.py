@@ -2,6 +2,7 @@ import random, math
 import cv2
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier 
+from sklearn import linear_model
 
 prefix = "/home/alyssa/synthposes/dataset/render_"
 
@@ -86,13 +87,14 @@ def train(features):
     X = []
     Y = []
 
-    for i in range(1, 5000):
+    for i in range(1, 1000):
         pt = randpoint(img[0])
 
         Y.append(isPart(img[3], pt, np.array([0x00, 0x00, 0x5B])))
         X.append(sample(img, pt, offsets))
 
     clf = RandomForestClassifier(n_estimators=3)
+    #clf = linear_model.LogisticRegression()
     clf = clf.fit(X, Y)
 
     return (clf, offsets)
@@ -100,21 +102,21 @@ def train(features):
 def visualize(model):
     (clf, offsets) = model
 
-    img = process(0)
+    img = process(1)
     vis = img[0].copy()
 
-    for x in range(0, 1023):
-        for y in range(0, 1023):
+    for x in range(50, 1023):
+        for y in range(400, 600):
             s = sample(img, np.array([x, y]), offsets)
-            vis[x, y] = clf.predict(np.array(s).reshape(1, -1))
+            vis[x, y] = clf.predict(np.array(s).reshape(1, -1)) * 255
         cv2.imshow("Vis", vis)
         cv2.waitKey(2)
-        print y
+        print x
 
     return vis
 
 print("Training...")
-model = train(50)
+model = train(500)
 print("Running...")
 cv2.imshow("Visualization", visualize(model))
 cv2.waitKey(0)
