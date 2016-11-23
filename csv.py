@@ -70,14 +70,15 @@ def train(clf, features, no):
     for i in range(1, 10000):
         pt = randpoint(img[0])
 
-        Y.append(isPart(img[3], pt, np.array([0x5B, 0x2D, 0x4B])))
+        #Y.append(isPart(img[3], pt, np.array([0x5B, 0x2D, 0x4B])))
+        Y.append(index(img[3], pt))
         X.append(sample(gamma, pt, features))
 
 def visualize(model):
     (clf, offsets) = model
 
-    img = process(20)
-    vis = img[0].copy()
+    img = process(49)
+    vis = img[3].copy()
     gamma = gammamat(img)
 
     for x in range(0, 1023):
@@ -94,8 +95,8 @@ print("Training...")
 #clf = GaussianNB()
 clf = RandomForestClassifier(n_estimators=1)
 
-features = generateFeatures(50)
-for image in range(0, 10):
+features = generateFeatures(100)
+for image in range(0, 40):
     print "Image " + str(image)
     train(clf, features, image)
 
