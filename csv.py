@@ -22,14 +22,14 @@ def isPart(parts, pt, color):
     return 1 * (np.all(c > color - delta) and np.all(c < color + delta))
 
 def cap(x):
-    return x if (x > 0 && x < 1024) else (0 if x < 0 else 1023)
+    return x if (x > 0 and x < 1024) else (0 if x < 0 else 1023)
 
 def index(mat, pt):
     return mat[cap(pt[0]), cap(pt[1])]
 
 def gammamat(mats):
     (gray, skin, foreground, _) = mats
-    return gray/10 + skin*10 + foreground*100;
+    return np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
 
 def delta(gamma, pt, offset):
     (u, v) = offset
@@ -46,10 +46,10 @@ def randoffset(sd):
     return np.array([int(random.gauss(0, sd)), int(random.gauss(0, sd))])
 
 def randvec(_):
-    return (randoffset(10), randoffset(10))
+    return (randoffset(100), randoffset(100))
 
 def randpoint(img):
-    return np.array([int(random.uniform(0, 1024), int(random.uniform(0, 1024))])
+    return np.array([int(random.uniform(0, 1024)), int(random.uniform(0, 1024))])
 
 def sample(gamma, pt, offsets):
     return map(lambda off: delta(gamma, pt, off), offsets)
@@ -59,26 +59,28 @@ def train(features):
 
     img = process(0)
     gamma = gammamat(img)
+    #cv2.imshow("Gamma", gamma / 255)
+    #return
 
     X = []
     Y = []
 
-    for i in range(1, 50000):
+    for i in range(1, 3000):
         pt = randpoint(img[0])
 
         Y.append(isPart(img[3], pt, np.array([0x00, 0x00, 0x5B])))
         X.append(sample(gamma, pt, offsets))
 
-    clf = RandomForestClassifier(n_estimators=10).fit(X, Y)
-    #clf = linear_model.LogisticRegression()
-    #clf = GaussianNB()
+    #clf = RandomForestClassifier(n_estimators=1).fit(X, Y)
+    #clf = linear_model.LogisticRegression().fit(X, Y)
+    clf = GaussianNB().fit(X, Y)
 
     return (clf, offsets)
 
 def visualize(model):
     (clf, offsets) = model
 
-    img = process(1)
+    img = process(0)
     vis = img[0].copy()
     gamma = gammamat(img)
 
@@ -87,8 +89,8 @@ def visualize(model):
             s = sample(gamma, np.array([x, y]), offsets)
             vis[x, y] = clf.predict(np.array(s).reshape(1, -1)) * 255
         cv2.imshow("Vis", vis)
-        cv2.waitKey(2)
-        print x
+        cv2.waitKey(1)
+        #print x
 
     return vis
 
