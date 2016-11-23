@@ -68,21 +68,50 @@ def train(clf, features, no):
         Y.append(index(img[3], pt))
         X.append(sample(gamma, pt, features))
 
+def ugrabA(offset):
+    return 256 if offset < 0 else 256 - offset
+
+def lgrabA(offset):
+    return 0 if offset > 0 else -offset
+
+def ugrabB(offset):
+    return 256 if offset > 0 else 256 + offset
+
+def lgrabB(offset):
+    return offset if offset > 0 else 0
+
+def select(w, h, mat, offset, C):
+    out = np.ones((w, h)) * C
+    out[lgrabA(offset[0]):ugrabA(offset[0]), lgrabA(offset[1]):ugrabA(offset[1])] = mat[lgrabB(offset[0]):ugrabB(offset[0]), lgrabB(offset[1]):ugrabB(offset[1])]
+    return out
+
 def visualize(model):
     (clf, offsets) = model
 
     img = process(0)
     vis = img[0].copy()
-    samples = np.zeros((256*256, 15))
+    samples = np.zeros((256, 256, 15))
     gamma = gammamat(img)
 
     print "Sampling..."
-    for y in xrange(0, 256):
-        for x in xrange(0, 256):
-            samples[x*256 + y] = sample(gamma, np.array([x, y]), offsets)
+    for f in xrange(0, 15):
+        (u, v) = offsets[f]
+        #print offsets[f]
+        #U = gamma[0 + u[0] : 256 + u[0], 0 + u[1] : 256 + u[1]]
+        #V = gamma[0 + v[0] : 256 + v[0], 0 + v[1] : 256 + u[1]]
+        #U = gamma[lgrab(u[0]) : ugrab(u[0]), lgrab(u[1]) : ugrab(u[1])]
+        #V = gamma[lgrab(v[0]) : ugrab(v[0]), lgrab(v[1]) : ugrab(v[1])]
+        U = select(256, 256, gamma, u, 255)
+        V = select(256, 256, gamma, v, 255)
+
+        #print U
+        #print V
+
+        samples[:, :, f] = U - V
+        #samples[x*256 + y] = sample(gamma, np.array([x, y]), offsets)
 
     print "Predicting..."
-    vis = clf.predict(samples).reshape(256,256)
+    vis = clf.predict(samples.reshape(256*256, 15)).reshape(256,256)
     return vis
 
 print("Training...")
