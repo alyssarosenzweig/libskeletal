@@ -68,15 +68,15 @@ def train(features):
     X = []
     Y = []
 
-    for i in range(1, 9000):
+    for i in range(1, 5000):
         pt = randpoint(img[0])
 
         Y.append(isPart(img[3], pt, np.array([0x00, 0x00, 0x5B])))
         X.append(sample(gamma, pt, offsets))
 
-    #clf = RandomForestClassifier(n_estimators=1).fit(X, Y)
-    #clf = linear_model.LogisticRegression().fit(X, Y)
-    clf = GaussianNB().fit(X, Y)
+    clf = RandomForestClassifier(n_estimators=1).fit(X, Y)
+    #clf = linear_model.LogisticRegression().fit(X, Y)``
+    #clf = GaussianNB().fit(X, Y)
 
     return (clf, offsets)
 
@@ -97,7 +97,7 @@ def visualize(model):
     return vis
 
 print("Training...")
-model = train(100)
+model = train(50)
 print("Running...")
 cv2.imshow("Visualization", visualize(model))
 cv2.waitKey(0)
