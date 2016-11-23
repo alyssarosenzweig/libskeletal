@@ -7,13 +7,11 @@ from sklearn.ensemble import RandomForestClassifier
 prefix = "/home/alyssa/synthposes/dataset/render_"
 
 def skin(rgb):
-    channels = cv2.split(rgb)
-    out = (channels[2] * 0.6 - channels[1] * 0.3 - channels[0] * 0.3) - 10
-    return (out > 0) * 1
+    chans = cv2.split(rgb)
+    return 1 * (((chans[2] * 0.6 - chans[1] * 0.3 - chans[0] * 0.3) - 10) > 0)
 
 def foreground(rgb):
-    (r, d) = cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)
-    return d
+    return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]
 
 def cap(x):
     return x if (x > 0 and x < 1024) else (0 if x < 0 else 1023)
