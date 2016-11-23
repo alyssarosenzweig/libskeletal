@@ -73,15 +73,16 @@ def visualize(model):
 
     img = process(0)
     vis = img[0].copy()
+    samples = np.zeros((256*256, 15))
     gamma = gammamat(img)
 
-    for x in xrange(0, 256):
-        for y in xrange(0, 256):
-            s = sample(gamma, np.array([x, y]), offsets)
-            vis.itemset((x, y), clf.predict(np.array(s).reshape(1, -1)))
-        cv2.imshow("Vis", vis)
-        cv2.waitKey(1)
+    print "Sampling..."
+    for y in xrange(0, 256):
+        for x in xrange(0, 256):
+            samples[x*256 + y] = sample(gamma, np.array([x, y]), offsets)
 
+    print "Predicting..."
+    vis = clf.predict(samples).reshape(256,256)
     return vis
 
 print("Training...")
@@ -99,5 +100,8 @@ clf = clf.fit(X, Y)
 model = (clf, features)
 
 print("Running...")
-cv2.imshow("Visualization", visualize(model))
+visualization = visualize(model)
+
+print("Visualizing...")
+cv2.imshow("Visualization", visualization)
 cv2.waitKey(0)
