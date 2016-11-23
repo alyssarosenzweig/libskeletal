@@ -46,7 +46,10 @@ def randoffset(sd):
     return np.array([int(random.gauss(0, sd)), int(random.gauss(0, sd))])
 
 def randvec(_):
-    return (randoffset(100), randoffset(100))
+    if random.random() > 0.5:
+        return (randoffset(100), randoffset(100))
+    else:
+        return (randoffset(100), np.array([0, 0]))
 
 def randpoint(img):
     return np.array([int(random.uniform(0, 1024)), int(random.uniform(0, 1024))])
@@ -65,7 +68,7 @@ def train(features):
     X = []
     Y = []
 
-    for i in range(1, 3000):
+    for i in range(1, 9000):
         pt = randpoint(img[0])
 
         Y.append(isPart(img[3], pt, np.array([0x00, 0x00, 0x5B])))
@@ -80,7 +83,7 @@ def train(features):
 def visualize(model):
     (clf, offsets) = model
 
-    img = process(0)
+    img = process(1)
     vis = img[0].copy()
     gamma = gammamat(img)
 
@@ -90,7 +93,6 @@ def visualize(model):
             vis[x, y] = clf.predict(np.array(s).reshape(1, -1)) * 255
         cv2.imshow("Vis", vis)
         cv2.waitKey(1)
-        #print x
 
     return vis
 
