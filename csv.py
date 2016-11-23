@@ -6,6 +6,10 @@ from sklearn.ensemble import RandomForestClassifier
 
 prefix = "/home/alyssa/synthposes/dataset/render_"
 
+# initialize background subtraction
+stream = cv2.VideoCapture(0)
+bg = cv2.resize(stream.read()[1], (1024, 1024))
+
 SIZE = 1024
 def skin(rgb):
     chans = cv2.split(rgb)
@@ -37,6 +41,15 @@ def process(number):
     rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (0, 0), fx=1, fy=1)
     parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (0, 0), fx=1, fy=1)
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.cvtColor(parts, cv2.COLOR_BGR2GRAY))
+
+def bgSubtract(rgb):
+    return cv2.threshold(cv2.split(cv2.absdiff(rgb, bg))[0], 24, 1, cv2.THRESH_BINARY)[1]
+
+def process_stream():
+    rgb = cv2.resize(stream.read()[1], (1024, 1024))
+    fg = bgSubtract(rgb)
+    cv2.imshow("FG", fg * 255)
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY) & fg, skin(rgb) & fg, fg, "Cheater!")
 
 def randoffset(sd):
     return np.array([int(random.uniform(-sd, sd)), int(random.uniform(-sd, sd))])
@@ -89,10 +102,11 @@ def select(w, h, mat, offset, C):
 def visualize(model, count):
     (clf, offsets) = model
 
-    img = process(0)
+    img = process_stream()
     vis = img[0].copy()
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
+    cv2.imshow("Gamma", gamma / 255)
 
     print "Sampling..."
     for f in xrange(0, count):
@@ -108,10 +122,12 @@ def visualize(model, count):
 
 print("Training...")
 
-clf = RandomForestClassifier(n_estimators=3)
+clf = RandomForestClassifier(n_estimators=2)
 
-features = generateFeatures(30)
-for image in range(0, 20):
+FEATURES = 40
+
+features = generateFeatures(FEATURES)
+for image in range(0, 50):
     print "Image " + str(image)
     train(clf, features, image)
 
@@ -120,9 +136,14 @@ print "Fitting..."
 clf = clf.fit(X, Y)
 model = (clf, features)
 
-print("Running...")
-visualization = visualize(model, 30)
+#print("Running...")
+#visualization = visualize(model, FEATURES)
 
-print("Visualizing...")
-cv2.imshow("Visualization", visualization)
-cv2.waitKey(0)
+#print("Visualizing...")
+#cv2.imshow("Visualization", visualization)
+#cv2.waitKey(0)
+
+#printprint("Running...")
+while True:
+    cv2.imshow("Visualization", visualize(model, FEATURES))
+    cv2.waitKey(16)
