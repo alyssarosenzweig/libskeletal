@@ -57,33 +57,26 @@ def randpoint(img):
 def sample(gamma, pt, offsets):
     return map(lambda off: delta(gamma, pt, off), offsets)
 
-def train(features):
-    offsets = map(randvec, [None] * features)
+def generateFeatures(count):
+    return map(randvec, [None] * count)
 
-    img = process(0)
+X = []
+Y = []
+
+def train(clf, features, no):
+    img = process(no)
     gamma = gammamat(img)
-    #cv2.imshow("Gamma", gamma / 255)
-    #return
 
-    X = []
-    Y = []
-
-    for i in range(1, 5000):
+    for i in range(1, 10000):
         pt = randpoint(img[0])
 
         Y.append(isPart(img[3], pt, np.array([0x00, 0x00, 0x5B])))
-        X.append(sample(gamma, pt, offsets))
-
-    clf = RandomForestClassifier(n_estimators=1).fit(X, Y)
-    #clf = linear_model.LogisticRegression().fit(X, Y)``
-    #clf = GaussianNB().fit(X, Y)
-
-    return (clf, offsets)
+        X.append(sample(gamma, pt, features))
 
 def visualize(model):
     (clf, offsets) = model
 
-    img = process(1)
+    img = process(20)
     vis = img[0].copy()
     gamma = gammamat(img)
 
@@ -97,7 +90,17 @@ def visualize(model):
     return vis
 
 print("Training...")
-model = train(50)
+
+clf = GaussianNB()
+
+features = generateFeatures(50)
+for image in range(0, 10):
+    print "Image " + str(image)
+    train(clf, features, image)
+
+clf = clf.fit(X, Y)
+model = (clf, features)
+
 print("Running...")
 cv2.imshow("Visualization", visualize(model))
 cv2.waitKey(0)
