@@ -17,7 +17,10 @@ def cap(x):
     return x if (x > 0 and x < 1024) else (0 if x < 0 else 1023)
 
 def index(mat, pt):
-    return mat[cap(pt[0]), cap(pt[1])]
+    try:
+        return mat[pt[0], pt[1]]
+    except IndexError:
+        return 1000
 
 def gammamat(mats):
     (gray, skin, foreground, _) = mats
@@ -52,7 +55,8 @@ def sample(gamma, pt, offsets):
 def generateFeatures(count):
     return map(randvec, [None] * count)
 
-X = [], Y = []
+X = []
+Y = []
 
 def train(clf, features, no):
     img = process(no)
@@ -71,7 +75,7 @@ def visualize(model):
     vis = img[3].copy()
     gamma = gammamat(img)
 
-    for x in range(0, 1023):
+    for x in range(50, 500):
         for y in range(200, 800):
             s = sample(gamma, np.array([x, y]), offsets)
             vis[x, y] = clf.predict(np.array(s).reshape(1, -1)) * 255
@@ -84,10 +88,12 @@ print("Training...")
 
 clf = RandomForestClassifier(n_estimators=1)
 
-features = generateFeatures(100)
-for image in range(0, 40):
+features = generateFeatures(15)
+for image in range(0, 1):
     print "Image " + str(image)
     train(clf, features, image)
+
+print "Fitting..."
 
 clf = clf.fit(X, Y)
 model = (clf, features)
