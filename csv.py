@@ -1,9 +1,8 @@
 import random, math
 import cv2
 import numpy as np
+
 from sklearn.ensemble import RandomForestClassifier 
-from sklearn import linear_model
-from sklearn.naive_bayes import GaussianNB, BernoulliNB
 
 prefix = "/home/alyssa/synthposes/dataset/render_"
 
@@ -15,11 +14,6 @@ def skin(rgb):
 def foreground(rgb):
     (r, d) = cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)
     return d
-
-def isPart(parts, pt, color):
-    c = index(parts, pt)
-    delta = np.array([4, 4, 4])
-    return 1 * (np.all(c > color - delta) and np.all(c < color + delta))
 
 def cap(x):
     return x if (x > 0 and x < 1024) else (0 if x < 0 else 1023)
@@ -60,8 +54,7 @@ def sample(gamma, pt, offsets):
 def generateFeatures(count):
     return map(randvec, [None] * count)
 
-X = []
-Y = []
+X = [], Y = []
 
 def train(clf, features, no):
     img = process(no)
@@ -70,7 +63,6 @@ def train(clf, features, no):
     for i in range(1, 10000):
         pt = randpoint(img[0])
 
-        #Y.append(isPart(img[3], pt, np.array([0x5B, 0x2D, 0x4B])))
         Y.append(index(img[3], pt))
         X.append(sample(gamma, pt, features))
 
@@ -92,7 +84,6 @@ def visualize(model):
 
 print("Training...")
 
-#clf = GaussianNB()
 clf = RandomForestClassifier(n_estimators=1)
 
 features = generateFeatures(100)
