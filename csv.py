@@ -6,11 +6,12 @@ from sklearn.ensemble import RandomForestClassifier
 
 prefix = "/home/alyssa/synthposes/dataset/render_"
 
+SIZE = 512
+
 # initialize background subtraction
 stream = cv2.VideoCapture(0)
-bg = cv2.resize(stream.read()[1], (1024, 1024))
+bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
-SIZE = 1024
 def skin(rgb):
     chans = cv2.split(rgb)
     return 1 * (((chans[2] * 0.6 - chans[1] * 0.3 - chans[0] * 0.3) - 10) > 0)
@@ -38,15 +39,15 @@ def delta(gamma, pt, offset):
     return index(gamma, left) - index(gamma, right)
 
 def process(number):
-    rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (0, 0), fx=1, fy=1)
-    parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (0, 0), fx=1, fy=1)
-    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.cvtColor(parts, cv2.COLOR_BGR2GRAY))
+    rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (SIZE, SIZE))
+    parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (SIZE, SIZE))
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.split(cv2.cvtColor(parts, cv2.COLOR_BGR2HSV))[0])
 
 def bgSubtract(rgb):
     return cv2.threshold(cv2.split(cv2.absdiff(rgb, bg))[0], 25, 1, cv2.THRESH_BINARY)[1]
 
 def process_stream():
-    rgb = cv2.resize(stream.read()[1], (1024, 1024))
+    rgb = cv2.resize(stream.read()[1], (SIZE, SIZE))
     fg = bgSubtract(rgb)
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY) & fg, skin(rgb), fg, "Cheater!")
 
@@ -103,10 +104,10 @@ def visualize(model, count):
 
     img = process_stream()
 
-    vis = img[0].copy()
+    #vis = cv2.cvtColor(img[3].copy(), cv2.COLOR_BGR2HSV)
+    vis = cv2.cvtColor(np.zeros((SIZE, SIZE, 3), dtype=np.uint8), CV_BGR2HSV)
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
-    return gamma / 255
 
     print "Sampling..."
     for f in xrange(0, count):
@@ -129,11 +130,11 @@ FEATURES = 30
 features = generateFeatures(FEATURES)
 for image in range(0, 10):
     print "Image " + str(image)
-#    train(clf, features, image)
+    train(clf, features, image)
 
 print "Fitting..."
 
-#clf = clf.fit(X, Y)
+clf = clf.fit(X, Y)
 model = (clf, features)
 
 #print("Running...")
@@ -143,10 +144,10 @@ model = (clf, features)
 #cv2.imshow("Visualization", visualization)
 #cv2.waitKey(0)
 
-#printprint("Running...")
+print("Running...")
 
 # show normal gamma for comp
-cv2.imshow("Comp", gammamat(process(0)) / 255)
+#cv2.imshow("Comp", gammamat(process(0)) / 255)
 
 while True:
     cv2.imshow("Visualization", visualize(model, FEATURES))
