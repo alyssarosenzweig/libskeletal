@@ -71,7 +71,7 @@ def train(clf, features, no):
 def visualize(model):
     (clf, offsets) = model
 
-    img = process(49)
+    img = process(0)
     vis = img[3].copy()
     gamma = gammamat(img)
 
