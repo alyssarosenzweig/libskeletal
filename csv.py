@@ -35,7 +35,7 @@ def delta(gamma, pt, offset):
 def process(number):
     rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (0, 0), fx=0.25, fy=0.25)
     parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (0, 0), fx=0.25, fy=0.25)
-    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), parts)
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.cvtColor(parts, cv2.COLOR_BGR2GRAY))
 
 def randoffset(sd):
     return np.array([int(random.uniform(-sd, sd)), int(random.uniform(-sd, sd))])
@@ -72,13 +72,13 @@ def visualize(model):
     (clf, offsets) = model
 
     img = process(0)
-    vis = img[3].copy()
+    vis = img[0].copy()
     gamma = gammamat(img)
 
-    for x in range(0, 256):
-        for y in range(0, 256):
+    for x in xrange(0, 256):
+        for y in xrange(0, 256):
             s = sample(gamma, np.array([x, y]), offsets)
-            vis[x, y] = clf.predict(np.array(s).reshape(1, -1)) * 255
+            vis.itemset((x, y), clf.predict(np.array(s).reshape(1, -1)))
         cv2.imshow("Vis", vis)
         cv2.waitKey(1)
 
@@ -89,7 +89,7 @@ print("Training...")
 clf = RandomForestClassifier(n_estimators=1)
 
 features = generateFeatures(15)
-for image in range(0, 40):
+for image in range(0, 1):
     print "Image " + str(image)
     train(clf, features, image)
 
