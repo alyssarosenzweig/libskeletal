@@ -96,19 +96,10 @@ def visualize(model):
     print "Sampling..."
     for f in xrange(0, 15):
         (u, v) = offsets[f]
-        #print offsets[f]
-        #U = gamma[0 + u[0] : 256 + u[0], 0 + u[1] : 256 + u[1]]
-        #V = gamma[0 + v[0] : 256 + v[0], 0 + v[1] : 256 + u[1]]
-        #U = gamma[lgrab(u[0]) : ugrab(u[0]), lgrab(u[1]) : ugrab(u[1])]
-        #V = gamma[lgrab(v[0]) : ugrab(v[0]), lgrab(v[1]) : ugrab(v[1])]
         U = select(256, 256, gamma, u, 255)
         V = select(256, 256, gamma, v, 255)
 
-        #print U
-        #print V
-
         samples[:, :, f] = U - V
-        #samples[x*256 + y] = sample(gamma, np.array([x, y]), offsets)
 
     print "Predicting..."
     vis = clf.predict(samples.reshape(256*256, 15)).reshape(256,256)
@@ -119,7 +110,7 @@ print("Training...")
 clf = RandomForestClassifier(n_estimators=1)
 
 features = generateFeatures(15)
-for image in range(0, 1):
+for image in range(0, 10):
     print "Image " + str(image)
     train(clf, features, image)
 
