@@ -13,39 +13,23 @@ def skin(rgb):
     return (out > 0) * 1
 
 def foreground(rgb):
-    channels = cv2.split(rgb)
-    (r, d) = cv2.threshold(channels[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)
+    (r, d) = cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)
     return d
-
-def findPart(parts, color):
-    delta = np.array([4, 4, 4])
-    return cv2.inRange(parts, color - delta, color + delta)
 
 def isPart(parts, pt, color):
     c = index(parts, pt)
     delta = np.array([4, 4, 4])
-    lower = color - delta
-    upper = color + delta
-    return 1 * (np.all(c > lower) and np.all(c < upper))
+    return 1 * (np.all(c > color - delta) and np.all(c < color + delta))
+
+def cap(x):
+    return x if (x > 0 && x < 1024) else (0 if x < 0 else 1023)
 
 def index(mat, pt):
-    apt = pt
-
-    if pt[0] < 0:
-        apt[0] = 0
-    elif pt[0] >= np.size(mat, 1):
-        apt[0] = np.size(mat, 1) - 1
-        
-    if pt[1] < 0:
-        apt[1] = 0
-    elif pt[1] >= np.size(mat, 1):
-        apt[1] = np.size(mat, 1) - 1
-
-    return mat[apt[0], apt[1]]
+    return mat[cap(pt[0]), cap(pt[1])]
 
 def gammamat(mats):
     (gray, skin, foreground, _) = mats
-    return gray*1 + skin*10 + foreground*100;
+    return gray/10 + skin*10 + foreground*100;
 
 def delta(gamma, pt, offset):
     (u, v) = offset
@@ -58,26 +42,17 @@ def process(number):
     parts = cv2.imread(prefix + str(number) + "_parts.png")
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), parts)
 
-def randoffset():
-    sd = 10
+def randoffset(sd):
     return np.array([int(random.gauss(0, sd)), int(random.gauss(0, sd))])
 
 def randvec(_):
-    return (randoffset(), randoffset())
+    return (randoffset(10), randoffset(10))
 
 def randpoint(img):
-    return np.array([int(random.uniform(0, np.size(img, 0))),
-        int(random.uniform(0, np.size(img, 1)))])
-
-DELTA_WEIGHTS = np.array([1, 10, 100])
+    return np.array([int(random.uniform(0, 1024), int(random.uniform(0, 1024))])
 
 def sample(gamma, pt, offsets):
-    out = []
-
-    for off in offsets:
-        out.append(delta(gamma, pt, off))
-
-    return out
+    return map(lambda off: delta(gamma, pt, off), offsets)
 
 def train(features):
     offsets = map(randvec, [None] * features)
@@ -94,10 +69,9 @@ def train(features):
         Y.append(isPart(img[3], pt, np.array([0x00, 0x00, 0x5B])))
         X.append(sample(gamma, pt, offsets))
 
-    #clf = RandomForestClassifier(n_estimators=10)
-    clf = linear_model.LogisticRegression()
+    clf = RandomForestClassifier(n_estimators=10).fit(X, Y)
+    #clf = linear_model.LogisticRegression()
     #clf = GaussianNB()
-    clf = clf.fit(X, Y)
 
     return (clf, offsets)
 
@@ -123,19 +97,3 @@ model = train(100)
 print("Running...")
 cv2.imshow("Visualization", visualize(model))
 cv2.waitKey(0)
-
-#d = delta(process(0),
-#        DELTA_WEIGHTS,
-#        np.array([500, 500]),
-#        randvec())
-
-#print(d)
-
-
-
-# cv2.imshow("parts", parts)
-# cv2.imshow("skin", skin(rgb))
-# cv2.imshow("fg", foreground(rgb))
-# cv2.imshow("head", findPart(parts, np.array([0x00, 0x00, 0x5B])))
-
-# cv2.waitKey(0)
