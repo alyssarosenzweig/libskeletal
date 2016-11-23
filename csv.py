@@ -29,7 +29,7 @@ def index(mat, pt):
 
 def gammamat(mats):
     (gray, skin, foreground, _) = mats
-    return np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
+    return 0*np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
 
 def delta(gamma, pt, offset):
     (u, v) = offset
@@ -43,13 +43,12 @@ def process(number):
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.cvtColor(parts, cv2.COLOR_BGR2GRAY))
 
 def bgSubtract(rgb):
-    return cv2.threshold(cv2.split(cv2.absdiff(rgb, bg))[0], 24, 1, cv2.THRESH_BINARY)[1]
+    return cv2.threshold(cv2.split(cv2.absdiff(rgb, bg))[0], 25, 1, cv2.THRESH_BINARY)[1]
 
 def process_stream():
     rgb = cv2.resize(stream.read()[1], (1024, 1024))
     fg = bgSubtract(rgb)
-    cv2.imshow("FG", fg * 255)
-    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY) & fg, skin(rgb) & fg, fg, "Cheater!")
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY) & fg, skin(rgb), fg, "Cheater!")
 
 def randoffset(sd):
     return np.array([int(random.uniform(-sd, sd)), int(random.uniform(-sd, sd))])
@@ -95,7 +94,7 @@ def lgrabB(offset):
     return offset if offset > 0 else 0
 
 def select(w, h, mat, offset, C):
-    out = np.ones((w, h)) * C
+    out = np.full((w, h), C)
     out[lgrabA(offset[0]):ugrabA(offset[0]), lgrabA(offset[1]):ugrabA(offset[1])] = mat[lgrabB(offset[0]):ugrabB(offset[0]), lgrabB(offset[1]):ugrabB(offset[1])]
     return out
 
@@ -103,10 +102,11 @@ def visualize(model, count):
     (clf, offsets) = model
 
     img = process_stream()
+
     vis = img[0].copy()
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
-    cv2.imshow("Gamma", gamma / 255)
+    return gamma / 255
 
     print "Sampling..."
     for f in xrange(0, count):
@@ -122,18 +122,18 @@ def visualize(model, count):
 
 print("Training...")
 
-clf = RandomForestClassifier(n_estimators=2)
+clf = RandomForestClassifier(n_estimators=1)
 
-FEATURES = 40
+FEATURES = 30
 
 features = generateFeatures(FEATURES)
-for image in range(0, 50):
+for image in range(0, 10):
     print "Image " + str(image)
-    train(clf, features, image)
+#    train(clf, features, image)
 
 print "Fitting..."
 
-clf = clf.fit(X, Y)
+#clf = clf.fit(X, Y)
 model = (clf, features)
 
 #print("Running...")
@@ -144,6 +144,10 @@ model = (clf, features)
 #cv2.waitKey(0)
 
 #printprint("Running...")
+
+# show normal gamma for comp
+cv2.imshow("Comp", gammamat(process(0)) / 255)
+
 while True:
     cv2.imshow("Visualization", visualize(model, FEATURES))
     cv2.waitKey(16)
