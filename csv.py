@@ -14,7 +14,7 @@ bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def skin(rgb):
     chans = cv2.split(rgb)
-    return 1 * (((chans[2] * 0.6 - chans[1] * 0.3 - chans[0] * 0.3) - 10) > 0)
+    return 1 * (((chans[2] * 0.6 - chans[1] * 0.3 - chans[0] * 0.3) - 8) > 0)
 
 def foreground(rgb):
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]
@@ -41,10 +41,10 @@ def delta(gamma, pt, offset):
 def process(number):
     rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (SIZE, SIZE))
     parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (SIZE, SIZE))
-    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.split(cv2.cvtColor(parts, cv2.COLOR_BGR2HSV))[0])
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.split(parts)[0])
 
 def bgSubtract(rgb):
-    return cv2.threshold(cv2.split(cv2.absdiff(rgb, bg))[0], 25, 1, cv2.THRESH_BINARY)[1]
+    return cv2.threshold(cv2.cvtColor(cv2.absdiff(rgb, bg), cv2.COLOR_BGR2GRAY), 32, 1, cv2.THRESH_BINARY)[1]
 
 def process_stream():
     rgb = cv2.resize(stream.read()[1], (SIZE, SIZE))
@@ -104,11 +104,11 @@ def visualize(model, count):
 
     img = process_stream()
 
-    #vis = cv2.cvtColor(img[3].copy(), cv2.COLOR_BGR2HSV)
-    vis = cv2.cvtColor(np.zeros((SIZE, SIZE, 3), dtype=np.uint8), CV_BGR2HSV)
+    vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
 
+    return gamma / 255
     print "Sampling..."
     for f in xrange(0, count):
         (u, v) = offsets[f]
@@ -119,7 +119,7 @@ def visualize(model, count):
 
     print "Predicting..."
     vis = clf.predict(samples.reshape(SIZE*SIZE, count)).reshape(SIZE, SIZE)
-    return vis
+    return vis * img[2]
 
 print("Training...")
 
@@ -130,11 +130,11 @@ FEATURES = 30
 features = generateFeatures(FEATURES)
 for image in range(0, 10):
     print "Image " + str(image)
-    train(clf, features, image)
+#    train(clf, features, image)
 
 print "Fitting..."
 
-clf = clf.fit(X, Y)
+#clf = clf.fit(X, Y)
 model = (clf, features)
 
 #print("Running...")
@@ -147,8 +147,8 @@ model = (clf, features)
 print("Running...")
 
 # show normal gamma for comp
-#cv2.imshow("Comp", gammamat(process(0)) / 255)
+cv2.imshow("Comp", gammamat(process(5)) / 255)
 
 while True:
     cv2.imshow("Visualization", visualize(model, FEATURES))
-    cv2.waitKey(16)
+    cv2.waitKey(1)
