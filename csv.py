@@ -10,7 +10,7 @@ SIZE = 512
 
 # initialize background subtraction
 stream = cv2.VideoCapture(0)
-bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
+#bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def skin(rgb):
     chans = cv2.split(rgb)
@@ -38,10 +38,21 @@ def delta(gamma, pt, offset):
 
     return index(gamma, left) - index(gamma, right)
 
+def color_encode(mat):
+    (blue, green, red) = cv2.split(mat)
+    return 1*np.int32(blue) + 256*np.int32(green) + 65536*np.int32(red)
+
+def color_decode(mat):
+    blue  = np.float32( (mat & 0x0000FF) >>  0 ) / 256
+    green = np.float32( (mat & 0x00FF00) >>  8 ) / 256
+    red   = np.float32( (mat & 0xFF0000) >> 16 ) / 256
+
+    return cv2.merge([blue, green, red])
+
 def process(number):
     rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (SIZE, SIZE))
     parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (SIZE, SIZE))
-    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), cv2.split(parts)[0])
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), color_encode(parts))
 
 def bgSubtract(rgb):
     return cv2.threshold(cv2.cvtColor(cv2.absdiff(rgb, bg), cv2.COLOR_BGR2GRAY), 32, 1, cv2.THRESH_BINARY)[1]
@@ -76,11 +87,16 @@ def train(clf, features, no):
     img = process(no)
     gamma = gammamat(img)
 
-    for i in range(1, 10000):
+    X = []
+    Y = []
+
+    for i in range(1, 1000):
         pt = randpoint(img[0])
 
         Y.append(index(img[3], pt))
         X.append(sample(gamma, pt, features))
+
+    return clf.partial-fit(X, Y)
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -102,13 +118,14 @@ def select(w, h, mat, offset, C):
 def visualize(model, count):
     (clf, offsets) = model
 
-    img = process_stream()
+    #img = process_stream()
+    img = process(5)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
 
-    return gamma / 255
+#    return gamma / 255
     print "Sampling..."
     for f in xrange(0, count):
         (u, v) = offsets[f]
@@ -119,18 +136,18 @@ def visualize(model, count):
 
     print "Predicting..."
     vis = clf.predict(samples.reshape(SIZE*SIZE, count)).reshape(SIZE, SIZE)
-    return vis * img[2]
+    return color_decode(vis)
 
 print("Training...")
 
-clf = RandomForestClassifier(n_estimators=1)
+clf = RandomForestClassifier(n_estimators=10)
 
-FEATURES = 30
+FEATURES = 10
 
 features = generateFeatures(FEATURES)
-for image in range(0, 10):
+for image in range(100, 120):
     print "Image " + str(image)
-#    train(clf, features, image)
+    clf = train(clf, features, image)
 
 print "Fitting..."
 
@@ -138,17 +155,21 @@ print "Fitting..."
 model = (clf, features)
 
 #print("Running...")
-#visualization = visualize(model, FEATURES)
+visualization = visualize(model, FEATURES)
 
 #print("Visualizing...")
-#cv2.imshow("Visualization", visualization)
-#cv2.waitKey(0)
+cv2.imshow("Visualization", visualization)
 
 print("Running...")
 
 # show normal gamma for comp
 cv2.imshow("Comp", gammamat(process(5)) / 255)
+cv2.waitKey(0)
+cv2.waitKey(0)
+cv2.waitKey(0)
+cv2.waitKey(0)
+cv2.waitKey(0)
 
-while True:
-    cv2.imshow("Visualization", visualize(model, FEATURES))
-    cv2.waitKey(1)
+#while True:
+#    cv2.imshow("Visualization", visualize(model, FEATURES))
+#    cv2.waitKey(1)
