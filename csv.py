@@ -80,8 +80,11 @@ def sample(gamma, pt, offsets):
 def generateFeatures(count):
     return map(randvec, [None] * count)
 
-X = np.zeros((4096, 1000))
-Y = np.zeros((4096), dtype=np.uint32)
+FEATURES = 100
+COUNT = 98
+
+X = np.zeros((4096 * COUNT, FEATURES))
+Y = np.zeros((4096 * COUNT), dtype=np.uint32)
 
 def train(clf, features, no):
     img = process(no)
@@ -96,11 +99,11 @@ def train(clf, features, no):
         V = select(SIZE, SIZE, gamma, v, 255)
 
         d = U - V
-        X[0:4096, f] = d.reshape(SIZE*SIZE)
+        X[no * 4096:(no+1) * 4096, f] = d.reshape(SIZE*SIZE)
         #samples[:, :, f] = U - V
 
     #X.append(samples.reshape(SIZE*SIZE, len(features)))
-    Y[0:4096] = img[3].reshape(SIZE*SIZE)
+    Y[no*4096:(no + 1)*4096] = img[3].reshape(SIZE*SIZE)
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -148,10 +151,8 @@ print("Training...")
 
 clf = RandomForestClassifier(n_estimators=10)
 
-FEATURES = 1000
-
 features = generateFeatures(FEATURES)
-for image in range(0, 1):
+for image in range(0, COUNT):
     print "Image " + str(image)
     train(clf, features, image)
 
