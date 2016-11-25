@@ -4,12 +4,12 @@ import numpy as np
 
 from sklearn.ensemble import RandomForestClassifier 
 
-prefix = "/home/alyssa/synthposes/dataset/render_"
+prefix = "/home/alyssa/synthposes/private/render_"
 
-SIZE = 512
+SIZE = 64
 
 # initialize background subtraction
-stream = cv2.VideoCapture(0)
+#stream = cv2.VideoCapture(0)
 #bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def skin(rgb):
@@ -67,9 +67,9 @@ def randoffset(sd):
 
 def randvec(_):
     if random.random() > 0.5:
-        return (randoffset(100), randoffset(100))
+        return (randoffset(12), randoffset(12))
     else:
-        return (randoffset(100), np.array([0, 0]))
+        return (randoffset(12), np.array([0, 0]))
 
 def randpoint(img):
     return np.array([int(random.uniform(0, SIZE)), int(random.uniform(0, SIZE))])
@@ -80,23 +80,27 @@ def sample(gamma, pt, offsets):
 def generateFeatures(count):
     return map(randvec, [None] * count)
 
-X = []
-Y = []
+X = np.zeros((4096, 1000))
+Y = np.zeros((4096), dtype=np.uint32)
 
 def train(clf, features, no):
     img = process(no)
     gamma = gammamat(img)
 
-    X = []
-    Y = []
+    samples = np.zeros((SIZE, SIZE, len(features)))
 
-    for i in range(1, 1000):
-        pt = randpoint(img[0])
+    for f in range(0, len(features)):
+        (u, v) = features[f]
 
-        Y.append(index(img[3], pt))
-        X.append(sample(gamma, pt, features))
+        U = select(SIZE, SIZE, gamma, u, 255)
+        V = select(SIZE, SIZE, gamma, v, 255)
 
-    return clf.partial-fit(X, Y)
+        d = U - V
+        X[0:4096, f] = d.reshape(SIZE*SIZE)
+        #samples[:, :, f] = U - V
+
+    #X.append(samples.reshape(SIZE*SIZE, len(features)))
+    Y[0:4096] = img[3].reshape(SIZE*SIZE)
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -119,14 +123,16 @@ def visualize(model, count):
     (clf, offsets) = model
 
     #img = process_stream()
-    img = process(5)
+    img = process(99)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
 
+    cv2.imshow("Gamma", cv2.resize(gamma / 256, (512, 512)))
+
 #    return gamma / 255
-    print "Sampling..."
+    #print "Sampling..."
     for f in xrange(0, count):
         (u, v) = offsets[f]
         U = select(SIZE, SIZE, gamma, u, 255)
@@ -134,42 +140,42 @@ def visualize(model, count):
 
         samples[:, :, f] = U - V
 
-    print "Predicting..."
+    #print "Predicting..."
     vis = clf.predict(samples.reshape(SIZE*SIZE, count)).reshape(SIZE, SIZE)
-    return color_decode(vis)
+    return color_decode(vis * img[2])
 
 print("Training...")
 
 clf = RandomForestClassifier(n_estimators=10)
 
-FEATURES = 10
+FEATURES = 1000
 
 features = generateFeatures(FEATURES)
-for image in range(100, 120):
+for image in range(0, 1):
     print "Image " + str(image)
-    clf = train(clf, features, image)
+    train(clf, features, image)
 
 print "Fitting..."
 
-#clf = clf.fit(X, Y)
+print np.array(X).shape
+
+clf = clf.fit(X, Y)
 model = (clf, features)
 
 #print("Running...")
-visualization = visualize(model, FEATURES)
+visualization = cv2.resize(visualize(model, FEATURES), (512, 512))
 
 #print("Visualizing...")
 cv2.imshow("Visualization", visualization)
+cv2.waitKey(0)
 
 print("Running...")
 
 # show normal gamma for comp
-cv2.imshow("Comp", gammamat(process(5)) / 255)
-cv2.waitKey(0)
-cv2.waitKey(0)
-cv2.waitKey(0)
-cv2.waitKey(0)
-cv2.waitKey(0)
+#cv2.imshow("Comp", cv2.resize(gammamat(process(11)) / 255, (512, 512)))
 
 #while True:
-#    cv2.imshow("Visualization", visualize(model, FEATURES))
-#    cv2.waitKey(1)
+#    v = visualize(model, FEATURES)
+#    cv2.imshow("Visualization", cv2.resize(v, (1024, 1024)))
+#    if cv2.waitKey(1) == 27:
+#        break
