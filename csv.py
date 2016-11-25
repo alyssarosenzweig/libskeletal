@@ -12,6 +12,9 @@ SIZE = 64
 #stream = cv2.VideoCapture(0)
 #bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
+def foreground(rgb):                                                            
+    return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]  
+
 def skin(rgb):
     chans = cv2.split(rgb)
     return 1 * (((chans[2] * 0.6 - chans[1] * 0.3 - chans[0] * 0.3) - 8) > 0)
