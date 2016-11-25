@@ -16,27 +16,9 @@ def skin(rgb):
     chans = cv2.split(rgb)
     return 1 * (((chans[2] * 0.6 - chans[1] * 0.3 - chans[0] * 0.3) - 8) > 0)
 
-def foreground(rgb):
-    return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]
-
-def cap(x):
-    return x if (x > 0 and x < SIZE) else (0 if x < 0 else SIZE - 1)
-
-def index(mat, pt):
-    try:
-        return mat[pt[0], pt[1]]
-    except IndexError:
-        return 1000
-
 def gammamat(mats):
     (gray, skin, foreground, _) = mats
     return 0*np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
-
-def delta(gamma, pt, offset):
-    (u, v) = offset
-    (left, right) = (pt + u, pt + v)
-
-    return index(gamma, left) - index(gamma, right)
 
 def color_encode(mat):
     (blue, green, red) = cv2.split(mat)
@@ -71,12 +53,6 @@ def randvec(_):
     else:
         return (randoffset(12), np.array([0, 0]))
 
-def randpoint(img):
-    return np.array([int(random.uniform(0, SIZE)), int(random.uniform(0, SIZE))])
-
-def sample(gamma, pt, offsets):
-    return map(lambda off: delta(gamma, pt, off), offsets)
-
 def generateFeatures(count):
     return map(randvec, [None] * count)
 
@@ -98,12 +74,9 @@ def train(clf, features, no):
         U = select(SIZE, SIZE, gamma, u, 255)
         V = select(SIZE, SIZE, gamma, v, 255)
 
-        d = U - V
-        X[no * 4096:(no+1) * 4096, f] = d.reshape(SIZE*SIZE)
-        #samples[:, :, f] = U - V
+        X[no * SIZE*SIZE:(no+1) * SIZE*SIZE, f] = (U-V).reshape(SIZE*SIZE)
 
-    #X.append(samples.reshape(SIZE*SIZE, len(features)))
-    Y[no*4096:(no + 1)*4096] = img[3].reshape(SIZE*SIZE)
+    Y[no*SIZE*SIZE:(no + 1)*SIZE*SIZE] = img[3].reshape(SIZE*SIZE)
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -134,8 +107,6 @@ def visualize(model, count):
 
     cv2.imshow("Gamma", cv2.resize(gamma / 256, (512, 512)))
 
-#    return gamma / 255
-    #print "Sampling..."
     for f in xrange(0, count):
         (u, v) = offsets[f]
         U = select(SIZE, SIZE, gamma, u, 255)
@@ -143,11 +114,8 @@ def visualize(model, count):
 
         samples[:, :, f] = U - V
 
-    #print "Predicting..."
     vis = clf.predict(samples.reshape(SIZE*SIZE, count)).reshape(SIZE, SIZE)
     return color_decode(vis * img[2])
-
-print("Training...")
 
 clf = RandomForestClassifier(n_estimators=10)
 
@@ -156,24 +124,13 @@ for image in range(0, COUNT):
     print "Image " + str(image)
     train(clf, features, image)
 
-print "Fitting..."
-
-print np.array(X).shape
-
 clf = clf.fit(X, Y)
 model = (clf, features)
 
-#print("Running...")
 visualization = cv2.resize(visualize(model, FEATURES), (512, 512))
 
-#print("Visualizing...")
 cv2.imshow("Visualization", visualization)
 cv2.waitKey(0)
-
-print("Running...")
-
-# show normal gamma for comp
-#cv2.imshow("Comp", cv2.resize(gammamat(process(11)) / 255, (512, 512)))
 
 #while True:
 #    v = visualize(model, FEATURES)
