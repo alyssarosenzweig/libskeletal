@@ -66,8 +66,6 @@ def train(clf, features, no):
     img = process(no)
     gamma = gammamat(img)
 
-    samples = np.zeros((SIZE, SIZE, len(features)))
-
     for f in range(0, len(features)):
         (u, v) = features[f]
 
