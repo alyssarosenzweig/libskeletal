@@ -9,8 +9,8 @@ prefix = "/home/alyssa/synthposes/private/render_"
 SIZE = 64
 
 # initialize background subtraction
-#stream = cv2.VideoCapture(0)
-#bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
+stream = cv2.VideoCapture(0)
+bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def foreground(rgb):                                                            
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]  
@@ -99,8 +99,8 @@ def select(w, h, mat, offset, C):
 def visualize(model, count):
     (clf, offsets) = model
 
-    #img = process_stream()
-    img = process(99)
+    img = process_stream()
+    #img = process(99)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -118,7 +118,7 @@ def visualize(model, count):
     vis = clf.predict(samples.reshape(SIZE*SIZE, count)).reshape(SIZE, SIZE)
     return color_decode(vis * img[2])
 
-clf = RandomForestClassifier(n_estimators=10)
+clf = RandomForestClassifier(n_estimators=1)
 
 features = generateFeatures(FEATURES)
 for image in range(0, COUNT):
@@ -133,8 +133,8 @@ visualization = cv2.resize(visualize(model, FEATURES), (512, 512))
 cv2.imshow("Visualization", visualization)
 cv2.waitKey(0)
 
-#while True:
-#    v = visualize(model, FEATURES)
-#    cv2.imshow("Visualization", cv2.resize(v, (1024, 1024)))
-#    if cv2.waitKey(1) == 27:
-#        break
+while True:
+    v = visualize(model, FEATURES)
+    cv2.imshow("Visualization", cv2.resize(v, (512, 512)))
+    if cv2.waitKey(1) == 27:
+        break
