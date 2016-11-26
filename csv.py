@@ -60,10 +60,10 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 98
+COUNT = 50
 
-X = np.zeros((4096 * COUNT, FEATURES))
-Y = np.zeros((4096 * COUNT), dtype=np.uint32)
+X = np.zeros((SIZE * SIZE * COUNT, FEATURES))
+Y = np.zeros((SIZE * SIZE * COUNT), dtype=np.uint32)
 
 def train(clf, features, no):
     img = process(no)
