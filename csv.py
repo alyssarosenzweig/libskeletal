@@ -2,7 +2,7 @@ import random, math
 import cv2
 import numpy as np
 
-from sklearn.ensemble import RandomForestClassifier 
+from sklearn.ensemble import RandomForestRegressor
 
 prefix = "/home/alyssa/synthposes/private/render_"
 
@@ -23,21 +23,9 @@ def gammamat(mats):
     (gray, skin, foreground, _) = mats
     return 0*np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
 
-def color_encode(mat):
-    (blue, green, red) = cv2.split(mat)
-    return 1*np.int32(blue) + 256*np.int32(green) + 65536*np.int32(red)
-
-def color_decode(mat):
-    blue  = np.float32( (mat & 0x0000FF) >>  0 ) / 256
-    green = np.float32( (mat & 0x00FF00) >>  8 ) / 256
-    red   = np.float32( (mat & 0xFF0000) >> 16 ) / 256
-
-    return cv2.merge([blue, green, red])
-
 def process(number):
     rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (SIZE, SIZE))
-    parts = cv2.resize(cv2.imread(prefix + str(number) + "_parts.png"), (SIZE, SIZE))
-    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), color_encode(parts))
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb))
 
 def bgSubtract(rgb):
     return cv2.threshold(cv2.cvtColor(cv2.absdiff(rgb, bg), cv2.COLOR_BGR2GRAY), 32, 1, cv2.THRESH_BINARY)[1]
@@ -118,7 +106,7 @@ def visualize(model, count):
     vis = clf.predict(samples.reshape(SIZE*SIZE, count)).reshape(SIZE, SIZE)
     return color_decode(vis * img[2])
 
-clf = RandomForestClassifier(n_estimators=1)
+clf = RandomForestRegressor(n_estimators=1)
 
 features = generateFeatures(FEATURES)
 for image in range(0, COUNT):
