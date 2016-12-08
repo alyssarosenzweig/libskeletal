@@ -1,5 +1,6 @@
 import random, math
 import cv2
+import json
 import numpy as np
 
 from sklearn.ensemble import RandomForestRegressor
@@ -24,8 +25,9 @@ def gammamat(mats):
     return 0*np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
 
 def process(number):
-    rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"),   (SIZE, SIZE))
-    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb))
+    rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"), (SIZE, SIZE))
+    skel  = json.loads(open(prefix + str(number) + "_skeleton.json"))
+    return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), skel)
 
 def bgSubtract(rgb):
     return cv2.threshold(cv2.cvtColor(cv2.absdiff(rgb, bg), cv2.COLOR_BGR2GRAY), 32, 1, cv2.THRESH_BINARY)[1]
