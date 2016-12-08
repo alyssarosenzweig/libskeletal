@@ -50,8 +50,32 @@ def generateFeatures(count):
 FEATURES = 100
 COUNT = 50
 
+# internal joint order by the ML library
+JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
+
+def serialize_skeleton(skeleton):
+    out = []
+    
+    for joint in JOINTS:
+        out.append(skeleton[joint][0])
+        out.append(skeleton[joint][1])
+
+    return out
+
+def unserialize_skeleton(skeleton):
+    out = {}
+
+    count = 0
+    for joint in JOINTS:
+        out[joint][0] = skeleton[count]
+        out[joint][1] = skeleton[count + 1]
+
+        count = count + 2
+
+    return out
+
 X = np.zeros((SIZE * SIZE * COUNT, FEATURES))
-Y = np.zeros((SIZE * SIZE * COUNT), dtype=np.uint32)
+Y = np.zeros((COUNT, len(JOINTS) * 2), dtype=np.uint32)
 
 def train(clf, features, no):
     img = process(no)
@@ -65,7 +89,7 @@ def train(clf, features, no):
 
         X[no * SIZE*SIZE:(no+1) * SIZE*SIZE, f] = (U-V).reshape(SIZE*SIZE)
 
-    Y[no*SIZE*SIZE:(no + 1)*SIZE*SIZE] = img[3].reshape(SIZE*SIZE)
+    Y[no] = serialize_skeleton(img[3])
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -84,7 +108,7 @@ def select(w, h, mat, offset, C):
     out[lgrabA(offset[0]):ugrabA(offset[0]), lgrabA(offset[1]):ugrabA(offset[1])] = mat[lgrabB(offset[0]):ugrabB(offset[0]), lgrabB(offset[1]):ugrabB(offset[1])]
     return out
 
-def visualize(model, count):
+def predict(model, count):
     (clf, offsets) = model
 
     img = process_stream()
@@ -103,8 +127,7 @@ def visualize(model, count):
 
         samples[:, :, f] = U - V
 
-    vis = clf.predict(samples.reshape(SIZE*SIZE, count)).reshape(SIZE, SIZE)
-    return color_decode(vis * img[2])
+    return clf.predict(samples.reshape(SIZE*SIZE, count))
 
 clf = RandomForestRegressor(n_estimators=1)
 
