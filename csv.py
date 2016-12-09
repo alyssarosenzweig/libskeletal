@@ -52,7 +52,7 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 5
+COUNT = 7
 
 # internal joint order by the ML library
 #JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
@@ -80,17 +80,17 @@ def unserialize_skeleton(skeleton):
     return out
 
 X = np.zeros((SIZE * SIZE * COUNT, FEATURES))
-Y = np.zeros((SIZE * SIZE * COUNT, len(JOINTS) * 2), dtype=np.int32)
+Y = np.zeros((SIZE * SIZE * COUNT, len(JOINTS) * 2), dtype=np.float32)
 
 def distmapx(c):
-    m = np.zeros((SIZE, SIZE), dtype=np.int32)
+    m = np.zeros((SIZE, SIZE), dtype=np.float32)
     for x in xrange(0, SIZE):
         m[:, x] = c - x
     return m.flatten()
     #return cv2.resize(m, (SIZE * SIZE, 1))
 
 def distmapy(c):
-    m = np.zeros((SIZE, SIZE), dtype=np.int32)
+    m = np.zeros((SIZE, SIZE), dtype=np.float32)
     for y in xrange(0, SIZE):
         m[y, :] = c - y
     #return cv2.resize(m, (SIZE*SIZE, 1))
@@ -109,6 +109,7 @@ def train(clf, features, no):
         X[no * SIZE*SIZE:(no+1) * SIZE*SIZE, f] = (U-V).reshape(SIZE*SIZE)
 
     (hx, hy) = map(lambda x: int(x / (1024 / SIZE)), serialize_skeleton(img[3]))
+    hy = SIZE - hy # blender uses a flipped coordinate system
     print hy
     print distmapy(hy)
     Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 0] = distmapx(hx)
@@ -135,7 +136,7 @@ def predict(model, count):
     (clf, offsets) = model
 
     #img = process_stream()
-    img = process(0)
+    img = process(9)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -155,7 +156,7 @@ def predict(model, count):
 clf = RandomForestRegressor(n_estimators=1)
 
 features = generateFeatures(FEATURES)
-for image in range(0, 1):
+for image in range(0, 5):
     print "Image " + str(image)
     train(clf, features, image)
 
@@ -163,14 +164,23 @@ clf = clf.fit(X, Y)
 model = (clf, features)
 
 visualization = predict(model, FEATURES)
-print visualization[:, 1] - distmapy(0)
+print visualization[:, 1]
 print(np.mean(visualization[:, 0] - distmapx(0)))
 print(np.mean(visualization[:, 1] - distmapy(0)))
 
+visualization = np.abs(visualization)
+
+I = 5 - np.reshape(visualization[:, 0] + visualization[:, 1], (SIZE, SIZE))
+m = cv2.moments(I)
+
+cv2.imshow ("M", cv2.resize(I, (512, 512)))
+print((m["m10"] / m["m00"]), (m["m01"] / m["m00"]))
+cv2.imshow("Y", np.reshape(visualization[:, 1], (SIZE, SIZE)) * 100)
+
 cv2.waitKey(0)
 
-while True:
-    v = predict(model, FEATURES)
-    cv2.imshow("Visualization", cv2.resize(v, (512, 512)))
-    if cv2.waitKey(1) == 27:
-        break
+#while True:
+#    v = predict(model, FEATURES)
+#cv2.imshow("Visualization", cv2.resize(v, (512, 512)))
+#    if cv2.waitKey(1) == 27:
+#        break
