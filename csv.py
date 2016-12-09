@@ -10,8 +10,8 @@ prefix = "/home/alyssa/synthposes/private/render_"
 SIZE = 64
 
 # initialize background subtraction
-stream = cv2.VideoCapture(0)
-bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
+#stream = cv2.VideoCapture(0)
+#bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def foreground(rgb):                                                            
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]  
@@ -26,7 +26,9 @@ def gammamat(mats):
 
 def process(number):
     rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"), (SIZE, SIZE))
-    skel  = json.loads(open(prefix + str(number) + "_skeleton.json"))
+    f = open(prefix + str(number) + "_skeleton.json")
+    skel  = json.loads(f.read())
+    f.close()
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), skel)
 
 def bgSubtract(rgb):
@@ -50,15 +52,19 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 50
+COUNT = 5
 
 # internal joint order by the ML library
-JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
+#JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
+JOINTS = ["head"]
 
 def serialize_skeleton(skeleton):
     out = []
     
     for joint in JOINTS:
+        print skeleton
+        print joint
+        print skeleton[joint]
         out.append(skeleton[joint][0])
         out.append(skeleton[joint][1])
 
@@ -77,7 +83,7 @@ def unserialize_skeleton(skeleton):
     return out
 
 X = np.zeros((SIZE * SIZE * COUNT, FEATURES))
-Y = np.zeros((COUNT, len(JOINTS) * 2), dtype=np.uint32)
+Y = np.zeros((SIZE * SIZE * COUNT, len(JOINTS) * 2), dtype=np.uint32)
 
 def train(clf, features, no):
     img = process(no)
@@ -91,7 +97,9 @@ def train(clf, features, no):
 
         X[no * SIZE*SIZE:(no+1) * SIZE*SIZE, f] = (U-V).reshape(SIZE*SIZE)
 
-    Y[no] = serialize_skeleton(img[3])
+    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE] = serialize_skeleton(img[3])
+
+    print(Y)
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -113,8 +121,8 @@ def select(w, h, mat, offset, C):
 def predict(model, count):
     (clf, offsets) = model
 
-    img = process_stream()
-    #img = process(99)
+    #img = process_stream()
+    img = process(0)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -141,13 +149,13 @@ for image in range(0, COUNT):
 clf = clf.fit(X, Y)
 model = (clf, features)
 
-visualization = cv2.resize(visualize(model, FEATURES), (512, 512))
+visualization = cv2.resize(predict(model, FEATURES), (512, 512))
 
 cv2.imshow("Visualization", visualization)
 cv2.waitKey(0)
 
 while True:
-    v = visualize(model, FEATURES)
+    v = predict(model, FEATURES)
     cv2.imshow("Visualization", cv2.resize(v, (512, 512)))
     if cv2.waitKey(1) == 27:
         break
