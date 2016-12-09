@@ -62,9 +62,6 @@ def serialize_skeleton(skeleton):
     out = []
     
     for joint in JOINTS:
-        print skeleton
-        print joint
-        print skeleton[joint]
         out.append(skeleton[joint][0])
         out.append(skeleton[joint][1])
 
@@ -85,6 +82,18 @@ def unserialize_skeleton(skeleton):
 X = np.zeros((SIZE * SIZE * COUNT, FEATURES))
 Y = np.zeros((SIZE * SIZE * COUNT, len(JOINTS) * 2), dtype=np.uint32)
 
+def distmapx(c):
+    m = np.zeros((SIZE, SIZE))
+    for x in xrange(0, SIZE):
+        m[:, x] = c - x
+    return cv2.resize(m, (SIZE * SIZE, 1))
+
+def distmapy(c):
+    m = np.zeros((SIZE, SIZE))
+    for y in xrange(0, SIZE):
+        m[y, :] = c - y
+    return cv2.resize(m, (SIZE*SIZE, 1))
+
 def train(clf, features, no):
     img = process(no)
     gamma = gammamat(img)
@@ -97,9 +106,9 @@ def train(clf, features, no):
 
         X[no * SIZE*SIZE:(no+1) * SIZE*SIZE, f] = (U-V).reshape(SIZE*SIZE)
 
-    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE] = serialize_skeleton(img[3])
-
-    print(Y)
+    (hx, hy) = serialize_skeleton(img[3])
+    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 0] = distmapx(hx)
+    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 1] = distmapy(hy)
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -149,9 +158,10 @@ for image in range(0, COUNT):
 clf = clf.fit(X, Y)
 model = (clf, features)
 
-visualization = cv2.resize(predict(model, FEATURES), (512, 512))
+visualization = predict(model, FEATURES)
+cv2.imshow("X", cv2.resize(visualization[:, 0] + distmapx(0), (SIZE, SIZE)) / 500)
+cv2.imshow("Y", cv2.resize(visualization[:, 1] + distmapy(0), (SIZE, SIZE)) / 500)
 
-cv2.imshow("Visualization", visualization)
 cv2.waitKey(0)
 
 while True:
