@@ -80,19 +80,21 @@ def unserialize_skeleton(skeleton):
     return out
 
 X = np.zeros((SIZE * SIZE * COUNT, FEATURES))
-Y = np.zeros((SIZE * SIZE * COUNT, len(JOINTS) * 2), dtype=np.uint32)
+Y = np.zeros((SIZE * SIZE * COUNT, len(JOINTS) * 2), dtype=np.int32)
 
 def distmapx(c):
-    m = np.zeros((SIZE, SIZE))
+    m = np.zeros((SIZE, SIZE), dtype=np.int32)
     for x in xrange(0, SIZE):
         m[:, x] = c - x
-    return cv2.resize(m, (SIZE * SIZE, 1))
+    return m.flatten()
+    #return cv2.resize(m, (SIZE * SIZE, 1))
 
 def distmapy(c):
-    m = np.zeros((SIZE, SIZE))
+    m = np.zeros((SIZE, SIZE), dtype=np.int32)
     for y in xrange(0, SIZE):
         m[y, :] = c - y
-    return cv2.resize(m, (SIZE*SIZE, 1))
+    #return cv2.resize(m, (SIZE*SIZE, 1))
+    return m.flatten()
 
 def train(clf, features, no):
     img = process(no)
@@ -106,7 +108,9 @@ def train(clf, features, no):
 
         X[no * SIZE*SIZE:(no+1) * SIZE*SIZE, f] = (U-V).reshape(SIZE*SIZE)
 
-    (hx, hy) = serialize_skeleton(img[3])
+    (hx, hy) = map(lambda x: int(x / (1024 / SIZE)), serialize_skeleton(img[3]))
+    print hy
+    print distmapy(hy)
     Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 0] = distmapx(hx)
     Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 1] = distmapy(hy)
 
@@ -151,7 +155,7 @@ def predict(model, count):
 clf = RandomForestRegressor(n_estimators=1)
 
 features = generateFeatures(FEATURES)
-for image in range(0, COUNT):
+for image in range(0, 1):
     print "Image " + str(image)
     train(clf, features, image)
 
@@ -159,8 +163,9 @@ clf = clf.fit(X, Y)
 model = (clf, features)
 
 visualization = predict(model, FEATURES)
-cv2.imshow("X", cv2.resize(visualization[:, 0] + distmapx(0), (SIZE, SIZE)) / 500)
-cv2.imshow("Y", cv2.resize(visualization[:, 1] + distmapy(0), (SIZE, SIZE)) / 500)
+print visualization[:, 1] - distmapy(0)
+print(np.mean(visualization[:, 0] - distmapx(0)))
+print(np.mean(visualization[:, 1] - distmapy(0)))
 
 cv2.waitKey(0)
 
