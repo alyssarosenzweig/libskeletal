@@ -9,9 +9,11 @@ prefix = "/home/alyssa/synthposes/private/render_"
 
 SIZE = 64
 
+ME = None
+
 # initialize background subtraction
-#stream = cv2.VideoCapture(0)
-#bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
+stream = cv2.VideoCapture(0)
+bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def foreground(rgb):                                                            
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]  
@@ -35,7 +37,9 @@ def bgSubtract(rgb):
     return cv2.threshold(cv2.cvtColor(cv2.absdiff(rgb, bg), cv2.COLOR_BGR2GRAY), 32, 1, cv2.THRESH_BINARY)[1]
 
 def process_stream():
+    global ME
     rgb = cv2.resize(stream.read()[1], (SIZE, SIZE))
+    ME = rgb
     fg = bgSubtract(rgb)
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY) & fg, skin(rgb), fg, "Cheater!")
 
@@ -135,14 +139,14 @@ def select(w, h, mat, offset, C):
 def predict(model, count):
     (clf, offsets) = model
 
-    #img = process_stream()
-    img = process(9)
+    img = process_stream()
+    #img = process(9)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
 
-    cv2.imshow("Gamma", cv2.resize(gamma / 256, (512, 512)))
+    #cv2.imshow("Gamma", cv2.resize(gamma / 256, (512, 512)))
 
     for f in xrange(0, count):
         (u, v) = offsets[f]
@@ -155,13 +159,13 @@ def predict(model, count):
 
 def jointPos(vis, n):
     I = -np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
-    cv2.imshow("I", 2+I)
+    cv2.imshow("I", 4+I)
     m = cv2.moments(np.float32(I > -1))
 
     if m["m00"] == 0:
         return (-1, -1)
 
-    return (m["m10"] / m["m00"], m["m01"] / m["m00"])
+    return (int(m["m10"] / m["m00"]), int(m["m01"] / m["m00"]))
 
 clf = RandomForestRegressor(n_estimators=1)
 
@@ -176,12 +180,17 @@ model = (clf, features)
 visualization = predict(model, FEATURES)
 visualization = np.abs(visualization)
 print jointPos(visualization, 0)
-cv2.imshow("Y", np.reshape(visualization[:, 0] + visualization[:, 1], (SIZE, SIZE)) * 100)
+#cv2.imshow("Y", np.reshape(visualization[:, 0] + visualization[:, 1], (SIZE, SIZE)) * 100)
 
 cv2.waitKey(0)
 
-#while True:
-#    v = predict(model, FEATURES)
-#cv2.imshow("Visualization", cv2.resize(v, (512, 512)))
-#    if cv2.waitKey(1) == 27:
-#        break
+while True:
+    v = np.abs(predict(model, FEATURES))
+    cv2.circle(ME, jointPos(v, 0), 3, (255, 0, 0), -1)
+    cv2.imshow("me", cv2.resize(ME, (512, 512)))
+    #M = np.float32(np.reshape(v[:, 0] + v[:, 1], (SIZE, SIZE)))
+    #cv2.imshow("M", M / 10)
+    #cv2.imshow("Y", cv2.resize(M / 100, (512, 512)))
+    #cv2.imshow("Visualization", cv2.resize(v, (512, 512)))
+    if cv2.waitKey(1) == 27:
+        break
