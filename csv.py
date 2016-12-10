@@ -153,6 +153,16 @@ def predict(model, count):
 
     return clf.predict(samples.reshape(SIZE*SIZE, count))
 
+def jointPos(vis, n):
+    I = -np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
+    cv2.imshow("I", 2+I)
+    m = cv2.moments(np.float32(I > -1))
+
+    if m["m00"] == 0:
+        return (-1, -1)
+
+    return (m["m10"] / m["m00"], m["m01"] / m["m00"])
+
 clf = RandomForestRegressor(n_estimators=1)
 
 features = generateFeatures(FEATURES)
@@ -164,18 +174,9 @@ clf = clf.fit(X, Y)
 model = (clf, features)
 
 visualization = predict(model, FEATURES)
-print visualization[:, 1]
-print(np.mean(visualization[:, 0] - distmapx(0)))
-print(np.mean(visualization[:, 1] - distmapy(0)))
-
 visualization = np.abs(visualization)
-
-I = 5 - np.reshape(visualization[:, 0] + visualization[:, 1], (SIZE, SIZE))
-m = cv2.moments(I)
-
-cv2.imshow ("M", cv2.resize(I, (512, 512)))
-print((m["m10"] / m["m00"]), (m["m01"] / m["m00"]))
-cv2.imshow("Y", np.reshape(visualization[:, 1], (SIZE, SIZE)) * 100)
+print jointPos(visualization, 0)
+cv2.imshow("Y", np.reshape(visualization[:, 0] + visualization[:, 1], (SIZE, SIZE)) * 100)
 
 cv2.waitKey(0)
 
