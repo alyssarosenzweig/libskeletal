@@ -56,7 +56,7 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 7
+COUNT = 10
 
 # internal joint order by the ML library
 #JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
@@ -159,7 +159,6 @@ def predict(model, count):
 
 def jointPos(vis, n):
     I = -np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
-    cv2.imshow("I", 4+I)
     m = cv2.moments(np.float32(I > -1))
 
     if m["m00"] == 0:
@@ -170,7 +169,7 @@ def jointPos(vis, n):
 clf = RandomForestRegressor(n_estimators=1)
 
 features = generateFeatures(FEATURES)
-for image in range(0, 5):
+for image in range(0, COUNT):
     print "Image " + str(image)
     train(clf, features, image)
 
@@ -182,7 +181,7 @@ visualization = np.abs(visualization)
 print jointPos(visualization, 0)
 #cv2.imshow("Y", np.reshape(visualization[:, 0] + visualization[:, 1], (SIZE, SIZE)) * 100)
 
-cv2.waitKey(0)
+#cv2.waitKey(0)
 
 while True:
     v = np.abs(predict(model, FEATURES))
