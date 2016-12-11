@@ -56,11 +56,11 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 10
+COUNT = 5
 
 # internal joint order by the ML library
 #JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
-JOINTS = ["head"]
+JOINTS = ["head", "lhand", "rhand"]
 
 def serialize_skeleton(skeleton):
     out = []
@@ -112,12 +112,18 @@ def train(clf, features, no):
 
         X[no * SIZE*SIZE:(no+1) * SIZE*SIZE, f] = (U-V).reshape(SIZE*SIZE)
 
-    (hx, hy) = map(lambda x: int(x / (1024 / SIZE)), serialize_skeleton(img[3]))
+    print serialize_skeleton(img[3])
+
+    (hx, hy, ix, iy, jx, jy) = map(lambda x: int(x / (1024 / SIZE)), serialize_skeleton(img[3]))
     hy = SIZE - hy # blender uses a flipped coordinate system
-    print hy
-    print distmapy(hy)
+    iy = SIZE - iy # blender uses a flipped coordinate system
+    jy = SIZE - jy # blender uses a flipped coordinate system
     Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 0] = distmapx(hx)
     Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 1] = distmapy(hy)
+    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 2] = distmapx(ix)
+    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 3] = distmapy(iy)
+    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 4] = distmapx(jx)
+    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 5] = distmapy(jy)
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -186,6 +192,8 @@ print jointPos(visualization, 0)
 while True:
     v = np.abs(predict(model, FEATURES))
     cv2.circle(ME, jointPos(v, 0), 3, (255, 0, 0), -1)
+    cv2.circle(ME, jointPos(v, 1), 3, (0, 255, 0), -1)
+    cv2.circle(ME, jointPos(v, 2), 3, (0, 0, 255), -1)
     cv2.imshow("me", cv2.resize(ME, (512, 512)))
     #M = np.float32(np.reshape(v[:, 0] + v[:, 1], (SIZE, SIZE)))
     #cv2.imshow("M", M / 10)
