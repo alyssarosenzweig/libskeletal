@@ -56,7 +56,7 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 5
+COUNT = 20
 
 # internal joint order by the ML library
 #JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
