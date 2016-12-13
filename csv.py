@@ -58,11 +58,10 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 18
+COUNT = 40
 
 # internal joint order by the ML library
-#JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
-JOINTS = ["head", "lhand", "rhand"]
+JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
 
 def serialize_skeleton(skeleton):
     out = []
@@ -115,7 +114,6 @@ def train(clf, features, no):
     skel = map(lambda x: int(x / (1024 / SIZE)), serialize_skeleton(img[3]))
 
     for k in xrange(0, len(JOINTS)):
-        print k
         Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, k*2 + 0] = distmapx(skel[k*2])
         Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, k*2 + 1] = distmapy(SIZE - skel[k*2 + 1])
 
@@ -140,7 +138,7 @@ def predict(model, count):
     (clf, offsets) = model
 
     #img = process_stream()
-    img = process(19)
+    img = process(48)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -175,9 +173,16 @@ visualization = np.abs(visualization)
 
 while True:
     v = np.abs(predict(model, FEATURES))
-    cv2.circle(ME, jointPos(v, 0), 3, (255, 0, 0), -1)
+    cv2.circle(ME, jointPos(v, 0), 3, (0, 0, 0), -1)
+
     cv2.circle(ME, jointPos(v, 1), 3, (0, 255, 0), -1)
-    cv2.circle(ME, jointPos(v, 2), 3, (0, 0, 255), -1)
+    cv2.circle(ME, jointPos(v, 2), 3, (100, 255, 0), -1)
+    cv2.circle(ME, jointPos(v, 3), 3, (200, 255, 0), -1)
+
+    cv2.circle(ME, jointPos(v, 4), 3, (0, 0, 255), -1)
+    cv2.circle(ME, jointPos(v, 5), 3, (100, 0, 255), -1)
+    cv2.circle(ME, jointPos(v, 6), 3, (200, 0, 255), -1)
+    
     cv2.imshow("me", cv2.resize(ME, (512, 512)))
 
     if cv2.waitKey(1) == 27:
