@@ -12,8 +12,8 @@ SIZE = 64
 ME = None
 
 # initialize background subtraction
-stream = cv2.VideoCapture(0)
-bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
+#stream = cv2.VideoCapture(0)
+#bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def foreground(rgb):                                                            
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]  
@@ -27,7 +27,9 @@ def gammamat(mats):
     return 0*np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
 
 def process(number):
+    global ME
     rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"), (SIZE, SIZE))
+    ME = rgb
     f = open(prefix + str(number) + "_skeleton.json")
     skel  = json.loads(f.read())
     f.close()
@@ -56,7 +58,7 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 20
+COUNT = 18
 
 # internal joint order by the ML library
 #JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
@@ -145,8 +147,8 @@ def select(w, h, mat, offset, C):
 def predict(model, count):
     (clf, offsets) = model
 
-    img = process_stream()
-    #img = process(9)
+    #img = process_stream()
+    img = process(19)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -165,7 +167,7 @@ def predict(model, count):
 
 def jointPos(vis, n):
     I = -np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
-    m = cv2.moments(np.float32(I > -1))
+    m = cv2.moments(np.float32(I > -1.3))
 
     if m["m00"] == 0:
         return (-1, -1)
