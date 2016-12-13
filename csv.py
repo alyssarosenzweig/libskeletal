@@ -50,18 +50,18 @@ def randoffset(sd):
 
 def randvec(_):
     if random.random() > 0.5:
-        return (randoffset(12), randoffset(12))
+        return (randoffset(24), randoffset(24))
     else:
-        return (randoffset(12), np.array([0, 0]))
+        return (randoffset(24), np.array([0, 0]))
 
 def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 40
+COUNT = 45
 
 # internal joint order by the ML library
-JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand"]
+JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand", "hip", "lpelvis", "lknee", "lfoot", "rpelvis", "rknee", "rfoot"]
 
 def serialize_skeleton(skeleton):
     out = []
@@ -138,7 +138,7 @@ def predict(model, count):
     (clf, offsets) = model
 
     #img = process_stream()
-    img = process(48)
+    img = process(COUNT + 1)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -158,7 +158,7 @@ def jointPos(vis, n):
     (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (13, 13), 0))
     return joint
 
-clf = RandomForestRegressor(n_estimators=1)
+clf = RandomForestRegressor(n_estimators=2)
 
 features = generateFeatures(FEATURES)
 for image in range(0, COUNT):
@@ -185,6 +185,16 @@ while True:
     cv2.circle(ME, jointPos(v, 5), r, (100, 0, 255), -1)
     cv2.circle(ME, jointPos(v, 6), r, (200, 0, 255), -1)
     
+    cv2.circle(ME, jointPos(v, 7), r, (255, 255, 255), -1)
+    
+    cv2.circle(ME, jointPos(v, 7), r, (255, 0, 0), -1)
+    cv2.circle(ME, jointPos(v, 8), r, (255, 127, 0), -1)
+    cv2.circle(ME, jointPos(v, 9), r, (255, 255, 0), -1)
+     
+    cv2.circle(ME, jointPos(v, 10), r, (255, 0, 255), -1)
+    cv2.circle(ME, jointPos(v, 11), r, (255, 127, 255), -1)
+    cv2.circle(ME, jointPos(v, 12), r, (255, 255, 255), -1)
+
     cv2.imshow("me", cv2.resize(ME, (512, 512)))
 
     if cv2.waitKey(1) == 27:
