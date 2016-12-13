@@ -50,15 +50,15 @@ def randoffset(sd):
 
 def randvec(_):
     if random.random() > 0.5:
-        return (randoffset(24), randoffset(24))
+        return (randoffset(16), randoffset(16))
     else:
-        return (randoffset(24), np.array([0, 0]))
+        return (randoffset(16), np.array([0, 0]))
 
 def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 99
+COUNT = 100
 
 # internal joint order by the ML library
 JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand", "hip", "lpelvis", "lknee", "lfoot", "rpelvis", "rknee", "rfoot"]
@@ -155,10 +155,10 @@ def predict(model, count):
 
 def jointPos(vis, n):
     I = np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
-    (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (13, 13), 0))
+    (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (17, 17), 0))
     return joint
 
-clf = RandomForestRegressor(n_estimators=2)
+clf = RandomForestRegressor(n_estimators=1, n_jobs=4)
 
 features = generateFeatures(FEATURES)
 for image in range(0, COUNT):
@@ -172,9 +172,18 @@ visualization = predict(model, FEATURES)
 visualization = np.abs(visualization)
 
 r = 1
+c = (0, 255, 0)
 
 while True:
     v = np.abs(predict(model, FEATURES))
+    
+    cv2.line(ME, jointPos(v, 0), jointPos(v, 1), c)
+    cv2.line(ME, jointPos(v, 1), jointPos(v, 2), c)
+    cv2.line(ME, jointPos(v, 2), jointPos(v, 3), c)
+    cv2.line(ME, jointPos(v, 0), jointPos(v, 4), c)
+    cv2.line(ME, jointPos(v, 4), jointPos(v, 5), c)
+    cv2.line(ME, jointPos(v, 5), jointPos(v, 6), c)
+
     cv2.circle(ME, jointPos(v, 0), r, (0, 0, 0), -1)
 
     cv2.circle(ME, jointPos(v, 1), r, (0, 255, 0), -1)
