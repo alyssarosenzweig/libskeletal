@@ -93,13 +93,11 @@ def distmapx(c):
     for x in xrange(0, SIZE):
         m[:, x] = c - x
     return m.flatten()
-    #return cv2.resize(m, (SIZE * SIZE, 1))
 
 def distmapy(c):
     m = np.zeros((SIZE, SIZE), dtype=np.float32)
     for y in xrange(0, SIZE):
         m[y, :] = c - y
-    #return cv2.resize(m, (SIZE*SIZE, 1))
     return m.flatten()
 
 def train(clf, features, no):
@@ -114,18 +112,12 @@ def train(clf, features, no):
 
         X[no * SIZE*SIZE:(no+1) * SIZE*SIZE, f] = (U-V).reshape(SIZE*SIZE)
 
-    print serialize_skeleton(img[3])
+    skel = map(lambda x: int(x / (1024 / SIZE)), serialize_skeleton(img[3]))
 
-    (hx, hy, ix, iy, jx, jy) = map(lambda x: int(x / (1024 / SIZE)), serialize_skeleton(img[3]))
-    hy = SIZE - hy # blender uses a flipped coordinate system
-    iy = SIZE - iy # blender uses a flipped coordinate system
-    jy = SIZE - jy # blender uses a flipped coordinate system
-    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 0] = distmapx(hx)
-    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 1] = distmapy(hy)
-    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 2] = distmapx(ix)
-    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 3] = distmapy(iy)
-    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 4] = distmapx(jx)
-    Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, 5] = distmapy(jy)
+    for k in xrange(0, len(JOINTS)):
+        print k
+        Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, k*2 + 0] = distmapx(skel[k*2])
+        Y[no * SIZE*SIZE:(no + 1) * SIZE*SIZE, k*2 + 1] = distmapy(SIZE - skel[k*2 + 1])
 
 def ugrabA(offset):
     return SIZE if offset < 0 else SIZE - offset
@@ -154,8 +146,6 @@ def predict(model, count):
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
 
-    #cv2.imshow("Gamma", cv2.resize(gamma / 256, (512, 512)))
-
     for f in xrange(0, count):
         (u, v) = offsets[f]
         U = select(SIZE, SIZE, gamma, u, 255)
@@ -182,10 +172,6 @@ model = (clf, features)
 
 visualization = predict(model, FEATURES)
 visualization = np.abs(visualization)
-print jointPos(visualization, 0)
-#cv2.imshow("Y", np.reshape(visualization[:, 0] + visualization[:, 1], (SIZE, SIZE)) * 100)
-
-#cv2.waitKey(0)
 
 while True:
     v = np.abs(predict(model, FEATURES))
@@ -193,9 +179,6 @@ while True:
     cv2.circle(ME, jointPos(v, 1), 3, (0, 255, 0), -1)
     cv2.circle(ME, jointPos(v, 2), 3, (0, 0, 255), -1)
     cv2.imshow("me", cv2.resize(ME, (512, 512)))
-    #M = np.float32(np.reshape(v[:, 0] + v[:, 1], (SIZE, SIZE)))
-    #cv2.imshow("M", M / 10)
-    #cv2.imshow("Y", cv2.resize(M / 100, (512, 512)))
-    #cv2.imshow("Visualization", cv2.resize(v, (512, 512)))
+
     if cv2.waitKey(1) == 27:
         break
