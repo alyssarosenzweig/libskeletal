@@ -155,7 +155,7 @@ def predict(model, count):
 
 def jointPos(vis, n):
     I = np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
-    (_1, _2, joint, _3) = cv2.minMaxLoc(I)
+    (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (13, 13), 0))
     return joint
 
 clf = RandomForestRegressor(n_estimators=1)
@@ -171,17 +171,19 @@ model = (clf, features)
 visualization = predict(model, FEATURES)
 visualization = np.abs(visualization)
 
+r = 1
+
 while True:
     v = np.abs(predict(model, FEATURES))
-    cv2.circle(ME, jointPos(v, 0), 3, (0, 0, 0), -1)
+    cv2.circle(ME, jointPos(v, 0), r, (0, 0, 0), -1)
 
-    cv2.circle(ME, jointPos(v, 1), 3, (0, 255, 0), -1)
-    cv2.circle(ME, jointPos(v, 2), 3, (100, 255, 0), -1)
-    cv2.circle(ME, jointPos(v, 3), 3, (200, 255, 0), -1)
+    cv2.circle(ME, jointPos(v, 1), r, (0, 255, 0), -1)
+    cv2.circle(ME, jointPos(v, 2), r, (100, 255, 0), -1)
+    cv2.circle(ME, jointPos(v, 3), r, (200, 255, 0), -1)
 
-    cv2.circle(ME, jointPos(v, 4), 3, (0, 0, 255), -1)
-    cv2.circle(ME, jointPos(v, 5), 3, (100, 0, 255), -1)
-    cv2.circle(ME, jointPos(v, 6), 3, (200, 0, 255), -1)
+    cv2.circle(ME, jointPos(v, 4), r, (0, 0, 255), -1)
+    cv2.circle(ME, jointPos(v, 5), r, (100, 0, 255), -1)
+    cv2.circle(ME, jointPos(v, 6), r, (200, 0, 255), -1)
     
     cv2.imshow("me", cv2.resize(ME, (512, 512)))
 
