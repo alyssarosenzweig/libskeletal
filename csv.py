@@ -12,8 +12,8 @@ SIZE = 64
 ME = None
 
 # initialize background subtraction
-#stream = cv2.VideoCapture(0)
-#bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
+stream = cv2.VideoCapture(0)
+bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def foreground(rgb):                                                            
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]  
@@ -58,7 +58,7 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 45
+COUNT = 99
 
 # internal joint order by the ML library
 JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand", "hip", "lpelvis", "lknee", "lfoot", "rpelvis", "rknee", "rfoot"]
@@ -137,8 +137,8 @@ def select(w, h, mat, offset, C):
 def predict(model, count):
     (clf, offsets) = model
 
-    #img = process_stream()
-    img = process(COUNT + 1)
+    img = process_stream()
+    #img = process(COUNT + 1)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
