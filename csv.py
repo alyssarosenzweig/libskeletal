@@ -166,13 +166,9 @@ def predict(model, count):
     return clf.predict(samples.reshape(SIZE*SIZE, count))
 
 def jointPos(vis, n):
-    I = -np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
-    m = cv2.moments(np.float32(I > -1.3))
-
-    if m["m00"] == 0:
-        return (-1, -1)
-
-    return (int(m["m10"] / m["m00"]), int(m["m01"] / m["m00"]))
+    I = np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
+    (_1, _2, joint, _3) = cv2.minMaxLoc(I)
+    return joint
 
 clf = RandomForestRegressor(n_estimators=1)
 
