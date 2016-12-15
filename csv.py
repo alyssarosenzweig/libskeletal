@@ -193,9 +193,6 @@ else:
     print "Loading model.."
     model = joblib.load("model.pkl")
 
-visualization = predict(model, FEATURES)
-visualization = np.abs(visualization)
-
 r = SIZE / 64
 c = (0, 255, 0)
 
