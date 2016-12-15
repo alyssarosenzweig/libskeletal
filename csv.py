@@ -4,6 +4,7 @@ import json
 import numpy as np
 
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.cluster  import MeanShift
 
 prefix = "/home/alyssa/synthposes/private/render_"
 
@@ -58,7 +59,7 @@ def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 100
+COUNT = 10
 
 # internal joint order by the ML library
 JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand", "hip", "lpelvis", "lknee", "lfoot", "rpelvis", "rknee", "rfoot"]
@@ -154,6 +155,12 @@ def predict(model, count):
     return clf.predict(samples.reshape(SIZE*SIZE, count))
 
 def jointPos(vis, n):
+    X = vis[:, n*2 + 0] - distmapx(0)
+    Y = vis[:, n*2 + 1] - distmapy(0)
+    ms = MeanShift(bandwidth=70, bin_seeding=True, min_bin_freq=1000)
+    ms.fit(np.column_stack([X, Y]))
+    print ms.cluster_centers_[0]
+    return tuple(map(int, ms.cluster_centers_[0]))
     I = np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
     (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (17, 17), 0))
     return joint
