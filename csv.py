@@ -1,17 +1,18 @@
 import random, math
 import cv2
-import json, cPickle
+import json
 import numpy as np
 
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.cluster  import MeanShift
+from sklearn.ensemble  import RandomForestRegressor
+from sklearn.cluster   import MeanShift
+from sklearn.externals import joblib
 
 prefix = "/home/alyssa/synthposes/private/render_"
 
 SIZE = 64
 
 ME = None
-LIVE = True
+LIVE = False
 
 # initialize background subtraction
 if LIVE:
@@ -181,11 +182,10 @@ if TRAINING:
     clf = clf.fit(X, Y)
     model = (clf, features)
 
-    with open("model.pickle", "w") as o:
-        cPickle.dump(model, o)
+    joblib.dump(model, "model.pkl")
 else:
     print "Loading model.."
-    model = cPickle.load(open("model.pickle", "r"))
+    model = joblib.load("model.pkl")
 
 visualization = predict(model, FEATURES)
 visualization = np.abs(visualization)
