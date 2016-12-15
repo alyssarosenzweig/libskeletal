@@ -13,8 +13,8 @@ SIZE = 64
 ME = None
 
 # initialize background subtraction
-stream = cv2.VideoCapture(0)
-bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
+#stream = cv2.VideoCapture(0)
+#bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def foreground(rgb):                                                            
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]  
@@ -138,8 +138,8 @@ def select(w, h, mat, offset, C):
 def predict(model, count):
     (clf, offsets) = model
 
-    img = process_stream()
-    #img = process(COUNT + 1)
+    #img = process_stream()
+    img = process(COUNT + 1)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -155,14 +155,14 @@ def predict(model, count):
     return clf.predict(samples.reshape(SIZE*SIZE, count))
 
 def jointPos(vis, n):
-    X = vis[:, n*2 + 0] - distmapx(0)
-    Y = vis[:, n*2 + 1] - distmapy(0)
-    ms = MeanShift(bandwidth=70, bin_seeding=True, min_bin_freq=1000)
-    ms.fit(np.column_stack([X, Y]))
-    print ms.cluster_centers_[0]
-    return tuple(map(int, ms.cluster_centers_[0]))
-    I = np.reshape(vis[:, n*2] + vis[:, n*2+1], (SIZE, SIZE))
-    (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (17, 17), 0))
+    #X = vis[:, n*2 + 0] - distmapx(0)
+    #Y = vis[:, n*2 + 1] - distmapy(0)
+    #ms = MeanShift(bandwidth=4, bin_seeding=True, min_bin_freq=20)
+    #ms.fit(np.column_stack([X, Y]))
+    #print ms.cluster_centers_[0]
+    #return tuple(map(int, ms.cluster_centers_[0]))
+    I = np.reshape(vis[:, n*2]*vis[:, n*2] + vis[:, n*2+1]*vis[:, n*2+1], (SIZE, SIZE))
+    (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (5, 5), 0))
     return joint
 
 clf = RandomForestRegressor(n_estimators=1, n_jobs=4)
@@ -213,5 +213,5 @@ while True:
 
     cv2.imshow("me", cv2.resize(ME, (512, 512)))
 
-    if cv2.waitKey(1) == 27:
+    if cv2.waitKey(0) == 27:
         break
