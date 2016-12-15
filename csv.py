@@ -9,10 +9,15 @@ from sklearn.externals import joblib
 
 prefix = "/home/alyssa/synthposes/private/render_"
 
-SIZE = 64
+# configuration metadata
+
+FEATURES = 100
+COUNT    = 210
+LIVE     = False
+TRAINING = False
+SIZE     = 64
 
 ME = None
-LIVE = False
 
 # initialize background subtraction
 if LIVE:
@@ -30,13 +35,18 @@ def gammamat(mats):
     (gray, skin, foreground, _) = mats
     return 0*np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
 
-def process(number):
+def process(number, training):
     global ME
     rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"), (SIZE, SIZE))
     ME = rgb
-    f = open(prefix + str(number) + "_skeleton.json")
-    skel  = json.loads(f.read())
-    f.close()
+    
+    if training:
+        f = open(prefix + str(number) + "_skeleton.json")
+        skel  = json.loads(f.read())
+        f.close()
+    else:
+        skel = "Cheater!"
+
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY), skin(rgb), foreground(rgb), skel)
 
 def bgSubtract(rgb):
@@ -60,10 +70,6 @@ def randvec(_):
 
 def generateFeatures(count):
     return map(randvec, [None] * count)
-
-FEATURES = 100
-COUNT    = 200
-TRAINING = True
 
 # internal joint order by the ML library
 JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand", "hip", "lpelvis", "lknee", "lfoot", "rpelvis", "rknee", "rfoot"]
@@ -105,7 +111,7 @@ def distmapy(c):
     return m.flatten()
 
 def train(clf, features, no):
-    img = process(no)
+    img = process(no, True)
     gamma = gammamat(img)
 
     for f in range(0, len(features)):
@@ -145,7 +151,7 @@ def predict(model, count):
     if LIVE:
         img = process_stream()
     else:
-        img = process(COUNT + 1)
+        img = process(COUNT + 1, False)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
