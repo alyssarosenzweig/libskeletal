@@ -1,6 +1,6 @@
 import random, math
 import cv2
-import json
+import json, cPickle
 import numpy as np
 
 from sklearn.ensemble import RandomForestRegressor
@@ -11,10 +11,12 @@ prefix = "/home/alyssa/synthposes/private/render_"
 SIZE = 64
 
 ME = None
+LIVE = True
 
 # initialize background subtraction
-#stream = cv2.VideoCapture(0)
-#bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
+if LIVE:
+    stream = cv2.VideoCapture(0)
+    bg = cv2.resize(stream.read()[1], (SIZE, SIZE))
 
 def foreground(rgb):                                                            
     return cv2.threshold(cv2.split(rgb)[0] - 0x8C, 0, 1, cv2.THRESH_BINARY)[1]  
@@ -51,15 +53,16 @@ def randoffset(sd):
 
 def randvec(_):
     if random.random() > 0.5:
-        return (randoffset(16), randoffset(16))
+        return (randoffset(SIZE / 4), randoffset(SIZE / 4))
     else:
-        return (randoffset(16), np.array([0, 0]))
+        return (randoffset(SIZE / 4), np.array([0, 0]))
 
 def generateFeatures(count):
     return map(randvec, [None] * count)
 
 FEATURES = 100
-COUNT = 10
+COUNT    = 200
+TRAINING = True
 
 # internal joint order by the ML library
 JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand", "hip", "lpelvis", "lknee", "lfoot", "rpelvis", "rknee", "rfoot"]
@@ -138,8 +141,10 @@ def select(w, h, mat, offset, C):
 def predict(model, count):
     (clf, offsets) = model
 
-    #img = process_stream()
-    img = process(COUNT + 1)
+    if LIVE:
+        img = process_stream()
+    else:
+        img = process(COUNT + 1)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -162,23 +167,30 @@ def jointPos(vis, n):
     #print ms.cluster_centers_[0]
     #return tuple(map(int, ms.cluster_centers_[0]))
     I = np.reshape(vis[:, n*2]*vis[:, n*2] + vis[:, n*2+1]*vis[:, n*2+1], (SIZE, SIZE))
-    (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (5, 5), 0))
+    (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (SIZE / 16 + 1, SIZE / 16 + 1), 0))
     return joint
 
-clf = RandomForestRegressor(n_estimators=1, n_jobs=4)
+if TRAINING:
+    clf = RandomForestRegressor(n_estimators=1, n_jobs=4)
 
-features = generateFeatures(FEATURES)
-for image in range(0, COUNT):
-    print "Image " + str(image)
-    train(clf, features, image)
+    features = generateFeatures(FEATURES)
+    for image in range(0, COUNT):
+        print "Image " + str(image)
+        train(clf, features, image)
 
-clf = clf.fit(X, Y)
-model = (clf, features)
+    clf = clf.fit(X, Y)
+    model = (clf, features)
+
+    with open("model.pickle", "w") as o:
+        cPickle.dump(model, o)
+else:
+    print "Loading model.."
+    model = cPickle.load(open("model.pickle", "r"))
 
 visualization = predict(model, FEATURES)
 visualization = np.abs(visualization)
 
-r = 1
+r = SIZE / 64
 c = (0, 255, 0)
 
 while True:
@@ -190,6 +202,17 @@ while True:
     cv2.line(ME, jointPos(v, 0), jointPos(v, 4), c)
     cv2.line(ME, jointPos(v, 4), jointPos(v, 5), c)
     cv2.line(ME, jointPos(v, 5), jointPos(v, 6), c)
+
+    # left leg
+    cv2.line(ME, jointPos(v, 4), jointPos(v, 7), c)
+    cv2.line(ME, jointPos(v, 7), jointPos(v, 8), c)
+    cv2.line(ME, jointPos(v, 8), jointPos(v, 9), c)
+    cv2.line(ME, jointPos(v, 9), jointPos(v, 10), c)
+
+    # right leg
+    cv2.line(ME, jointPos(v, 1), jointPos(v, 11), c)
+    cv2.line(ME, jointPos(v, 11), jointPos(v, 12), c)
+    cv2.line(ME, jointPos(v, 12), jointPos(v, 13), c)
 
     cv2.circle(ME, jointPos(v, 0), r, (0, 0, 0), -1)
 
@@ -213,5 +236,5 @@ while True:
 
     cv2.imshow("me", cv2.resize(ME, (512, 512)))
 
-    if cv2.waitKey(0) == 27:
+    if cv2.waitKey(1) == 27:
         break
