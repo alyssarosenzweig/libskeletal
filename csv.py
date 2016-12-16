@@ -4,7 +4,6 @@ import json
 import numpy as np
 
 from sklearn.ensemble  import RandomForestRegressor
-from sklearn.cluster   import MeanShift
 from sklearn.externals import joblib
 
 prefix = "/home/alyssa/synthposes/private/render_"
@@ -12,9 +11,10 @@ prefix = "/home/alyssa/synthposes/private/render_"
 # configuration metadata
 
 FEATURES = 100
-COUNT    = 210
+COUNT    = 20
 LIVE     = False
-TRAINING = False
+TRAINING = True
+SAVE     = False
 SIZE     = 64
 
 ME = None
@@ -151,7 +151,7 @@ def predict(model, count):
     if LIVE:
         img = process_stream()
     else:
-        img = process(COUNT + 1, False)
+        img = process(COUNT + 3, False)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -167,15 +167,8 @@ def predict(model, count):
     return clf.predict(samples.reshape(SIZE*SIZE, count))
 
 def jointPos(vis, n):
-    #X = vis[:, n*2 + 0] - distmapx(0)
-    #Y = vis[:, n*2 + 1] - distmapy(0)
-    #ms = MeanShift(bandwidth=4, bin_seeding=True, min_bin_freq=20)
-    #ms.fit(np.column_stack([X, Y]))
-    #print ms.cluster_centers_[0]
-    #return tuple(map(int, ms.cluster_centers_[0]))
     I = np.reshape(vis[:, n*2]*vis[:, n*2] + vis[:, n*2+1]*vis[:, n*2+1], (SIZE, SIZE))
-    (_1, _2, joint, _3) = cv2.minMaxLoc(cv2.GaussianBlur(I, (SIZE / 16 + 1, SIZE / 16 + 1), 0))
-    return joint
+    return cv2.minMaxLoc(cv2.GaussianBlur(I, (SIZE / 16 + 1, SIZE / 16 + 1), 0))[2]
 
 if TRAINING:
     clf = RandomForestRegressor(n_estimators=1, n_jobs=4)
@@ -188,7 +181,8 @@ if TRAINING:
     clf = clf.fit(X, Y)
     model = (clf, features)
 
-    joblib.dump(model, "model.pkl")
+    if SAVE:
+        joblib.dump(model, "model.pkl")
 else:
     print "Loading model.."
     model = joblib.load("model.pkl")
