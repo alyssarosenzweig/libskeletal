@@ -10,11 +10,11 @@ prefix = "/home/alyssa/synthposes/private/render_"
 
 # configuration metadata
 
-FEATURES = 100
-COUNT    = 20
-LIVE     = False
-TRAINING = True
-SAVE     = False
+FEATURES = 200
+COUNT    = 500
+LIVE     = True
+TRAINING = False
+SAVE     = True
 SIZE     = 64
 
 ME = None
@@ -33,7 +33,7 @@ def skin(rgb):
 
 def gammamat(mats):
     (gray, skin, foreground, _) = mats
-    return 0*np.float32(gray) + np.float32(foreground)*127 + np.float32(skin)*63
+    return 0*np.float32(gray) + np.float32(foreground)*63 + np.float32(skin)*np.float32(foreground)*127
 
 def process(number, training):
     global ME
@@ -157,6 +157,8 @@ def predict(model, count):
     samples = np.zeros((SIZE, SIZE, count))
     gamma = gammamat(img)
 
+    cv2.imshow("Gamma", gamma)
+
     for f in xrange(0, count):
         (u, v) = offsets[f]
         U = select(SIZE, SIZE, gamma, u, 255)
@@ -168,10 +170,10 @@ def predict(model, count):
 
 def jointPos(vis, n):
     I = np.reshape(vis[:, n*2]*vis[:, n*2] + vis[:, n*2+1]*vis[:, n*2+1], (SIZE, SIZE))
-    return cv2.minMaxLoc(cv2.GaussianBlur(I, (SIZE / 16 + 1, SIZE / 16 + 1), 0))[2]
+    return cv2.minMaxLoc(cv2.GaussianBlur(I, (SIZE / 4 + 1, SIZE / 4 + 1), 0))[2]
 
 if TRAINING:
-    clf = RandomForestRegressor(n_estimators=1, n_jobs=4)
+    clf = RandomForestRegressor(n_estimators=1, n_jobs=-1)
 
     features = generateFeatures(FEATURES)
     for image in range(0, COUNT):
@@ -201,15 +203,15 @@ while True:
     cv2.line(ME, jointPos(v, 5), jointPos(v, 6), c)
 
     # left leg
-    cv2.line(ME, jointPos(v, 4), jointPos(v, 7), c)
-    cv2.line(ME, jointPos(v, 7), jointPos(v, 8), c)
-    cv2.line(ME, jointPos(v, 8), jointPos(v, 9), c)
-    cv2.line(ME, jointPos(v, 9), jointPos(v, 10), c)
+    #cv2.line(ME, jointPos(v, 4), jointPos(v, 7), c)
+    #cv2.line(ME, jointPos(v, 7), jointPos(v, 8), c)
+    #cv2.line(ME, jointPos(v, 8), jointPos(v, 9), c)
+    #cv2.line(ME, jointPos(v, 9), jointPos(v, 10), c)
 
     # right leg
-    cv2.line(ME, jointPos(v, 1), jointPos(v, 11), c)
-    cv2.line(ME, jointPos(v, 11), jointPos(v, 12), c)
-    cv2.line(ME, jointPos(v, 12), jointPos(v, 13), c)
+    #cv2.line(ME, jointPos(v, 1), jointPos(v, 11), c)
+    #cv2.line(ME, jointPos(v, 11), jointPos(v, 12), c)
+    #cv2.line(ME, jointPos(v, 12), jointPos(v, 13), c)
 
     cv2.circle(ME, jointPos(v, 0), r, (0, 0, 0), -1)
 
