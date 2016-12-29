@@ -21,6 +21,8 @@ import cv2
 import json
 import numpy as np
 
+from itertools import chain
+
 from sklearn.ensemble  import RandomForestRegressor
 from sklearn.externals import joblib
 
