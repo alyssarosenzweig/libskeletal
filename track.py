@@ -55,9 +55,8 @@ def process(number, training):
     rgb = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"), (SIZE, SIZE))
     
     if training:
-        f = open(prefix + str(number) + "_skeleton.json")
-        skel  = json.loads(f.read())
-        f.close()
+        with open(prefix + str(number) + "_skeleton.json") as f:
+            skel  = json.loads(f.read())
     else:
         skel = "Cheater!"
 
