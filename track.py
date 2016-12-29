@@ -190,68 +190,68 @@ def jointPos(vis, n):
     I = np.reshape(vis[:, n*2]*vis[:, n*2] + vis[:, n*2+1]*vis[:, n*2+1], (SIZE, SIZE))
     return cv2.minMaxLoc(cv2.GaussianBlur(I, (SIZE / 4 + 1, SIZE / 4 + 1), 0))[2]
 
-if TRAINING:
-    clf = RandomForestRegressor(n_estimators=1, n_jobs=-1)
+def getModel():
+    if TRAINING:
+        clf = RandomForestRegressor(n_estimators=1, n_jobs=-1)
 
-    features = generateFeatures(FEATURES)
-    for image in range(0, COUNT):
-        print "Image " + str(image)
-        train(clf, features, image)
+        features = generateFeatures(FEATURES)
+        for image in range(0, COUNT):
+            print "Image " + str(image)
+            train(clf, features, image)
 
-    clf = clf.fit(X, Y)
-    model = (clf, features)
+        clf = clf.fit(X, Y)
+        model = (clf, features)
 
-    if SAVE:
-        joblib.dump(model, "model.pkl")
-else:
-    print "Loading model.."
-    model = joblib.load("model.pkl")
+        if SAVE:
+            joblib.dump(model, "model.pkl")
+    else:
+        print "Loading model.."
+        model = joblib.load("model.pkl")
 
-r = SIZE / 64
-c = (0, 255, 0)
-
-while True:
-    v = np.abs(predict(model, FEATURES))
-    
-    cv2.line(ME, jointPos(v, 0), jointPos(v, 1), c)
-    cv2.line(ME, jointPos(v, 1), jointPos(v, 2), c)
-    cv2.line(ME, jointPos(v, 2), jointPos(v, 3), c)
-    cv2.line(ME, jointPos(v, 0), jointPos(v, 4), c)
-    cv2.line(ME, jointPos(v, 4), jointPos(v, 5), c)
-    cv2.line(ME, jointPos(v, 5), jointPos(v, 6), c)
+def visualizeSkeletion(img, v, r, c):
+    cv2.line(img, jointPos(v, 0), jointPos(v, 1), c)
+    cv2.line(img, jointPos(v, 1), jointPos(v, 2), c)
+    cv2.line(img, jointPos(v, 2), jointPos(v, 3), c)
+    cv2.line(img, jointPos(v, 0), jointPos(v, 4), c)
+    cv2.line(img, jointPos(v, 4), jointPos(v, 5), c)
+    cv2.line(img, jointPos(v, 5), jointPos(v, 6), c)
 
     # left leg
-    #cv2.line(ME, jointPos(v, 4), jointPos(v, 7), c)
-    #cv2.line(ME, jointPos(v, 7), jointPos(v, 8), c)
-    #cv2.line(ME, jointPos(v, 8), jointPos(v, 9), c)
-    #cv2.line(ME, jointPos(v, 9), jointPos(v, 10), c)
+    #cv2.line(img, jointPos(v, 4, , , rrr), jointPos(v, 7), c)
+    #cv2.line(img, jointPos(v, 7), jointPos(v, 8), c)
+    #cv2.line(img, jointPos(v, 8), jointPos(v, 9), c)
+    #cv2.line(img, jointPos(v, 9), jointPos(v, 10), c)
 
     # right leg
-    #cv2.line(ME, jointPos(v, 1), jointPos(v, 11), c)
-    #cv2.line(ME, jointPos(v, 11), jointPos(v, 12), c)
-    #cv2.line(ME, jointPos(v, 12), jointPos(v, 13), c)
+    #cv2.line(img, jointPos(v, 1), jointPos(v, 11), c)
+    #cv2.line(img, jointPos(v, 11), jointPos(v, 12), c)
+    #cv2.line(img, jointPos(v, 12), jointPos(v, 13), c)
 
-    cv2.circle(ME, jointPos(v, 0), r, (0, 0, 0), -1)
+    cv2.circle(img, jointPos(v, 0), r, (0, 0, 0), -1)
 
-    cv2.circle(ME, jointPos(v, 1), r, (0, 255, 0), -1)
-    cv2.circle(ME, jointPos(v, 2), r, (100, 255, 0), -1)
-    cv2.circle(ME, jointPos(v, 3), r, (200, 255, 0), -1)
+    cv2.circle(img, jointPos(v, 1), r, (0, 255, 0), -1)
+    cv2.circle(img, jointPos(v, 2), r, (100, 255, 0), -1)
+    cv2.circle(img, jointPos(v, 3), r, (200, 255, 0), -1)
 
-    cv2.circle(ME, jointPos(v, 4), r, (0, 0, 255), -1)
-    cv2.circle(ME, jointPos(v, 5), r, (100, 0, 255), -1)
-    cv2.circle(ME, jointPos(v, 6), r, (200, 0, 255), -1)
+    cv2.circle(img, jointPos(v, 4), r, (0, 0, 255), -1)
+    cv2.circle(img, jointPos(v, 5), r, (100, 0, 255), -1)
+    cv2.circle(img, jointPos(v, 6), r, (200, 0, 255), -1)
     
-    cv2.circle(ME, jointPos(v, 7), r, (255, 255, 255), -1)
+    cv2.circle(img, jointPos(v, 7), r, (255, 255, 255), -1)
     
-    cv2.circle(ME, jointPos(v, 7), r, (255, 0, 0), -1)
-    cv2.circle(ME, jointPos(v, 8), r, (255, 127, 0), -1)
-    cv2.circle(ME, jointPos(v, 9), r, (255, 255, 0), -1)
+    cv2.circle(img, jointPos(v, 7), r, (255, 0, 0), -1)
+    cv2.circle(img, jointPos(v, 8), r, (255, 127, 0), -1)
+    cv2.circle(img, jointPos(v, 9), r, (255, 255, 0), -1)
      
-    cv2.circle(ME, jointPos(v, 10), r, (255, 0, 255), -1)
-    cv2.circle(ME, jointPos(v, 11), r, (255, 127, 255), -1)
-    cv2.circle(ME, jointPos(v, 12), r, (255, 255, 255), -1)
+    cv2.circle(img, jointPos(v, 10), r, (255, 0, 255), -1)
+    cv2.circle(img, jointPos(v, 11), r, (255, 127, 255), -1)
+    cv2.circle(img, jointPos(v, 12), r, (255, 255, 255), -1)
 
-    cv2.imshow("me", cv2.resize(ME, (512, 512)))
+if __name__ == '__main__':
+    while True:
+        v = np.abs(predict(model, FEATURES))
+        vis = visualizeSkeleton(ME, v, SIZE / 64, (0, 255, 0))
+        cv2.imshow("Visualization", cv2.resize(vis, (512, 512)))
 
-    if cv2.waitKey(1) == 27:
-        break
+        if cv2.waitKey(1) == 27:
+            break
