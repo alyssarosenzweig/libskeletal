@@ -190,25 +190,30 @@ def jointPos(vis, n):
     I = np.reshape(vis[:, n*2]*vis[:, n*2] + vis[:, n*2+1]*vis[:, n*2+1], (SIZE, SIZE))
     return cv2.minMaxLoc(cv2.GaussianBlur(I, (SIZE / 4 + 1, SIZE / 4 + 1), 0))[2]
 
+def trainModel(featureCount, imageCount, save):
+    clf = RandomForestRegressor(n_estimators=1, n_jobs=-1)
+
+    features = generateFeatures(featureCount)
+
+    for image in range(0, imageCount):
+        print "Image " + str(image)
+        train(clf, features, image)
+
+    clf = clf.fit(X, Y)
+    model = (clf, features)
+
+    if save:
+        joblib.dump(model, "model.pkl")
+
+    return model
+
 def getModel():
     if TRAINING:
-        clf = RandomForestRegressor(n_estimators=1, n_jobs=-1)
-
-        features = generateFeatures(FEATURES)
-        for image in range(0, COUNT):
-            print "Image " + str(image)
-            train(clf, features, image)
-
-        clf = clf.fit(X, Y)
-        model = (clf, features)
-
-        if SAVE:
-            joblib.dump(model, "model.pkl")
+        return trainModel(FEATURES, COUNT, SAVE)j
     else:
-        print "Loading model.."
-        model = joblib.load("model.pkl")
+        return joblib.load("model.pkl")
 
-def visualizeSkeletion(img, v, r, c):
+def visualizeSkeleton(img, v, r, c):
     cv2.line(img, jointPos(v, 0), jointPos(v, 1), c)
     cv2.line(img, jointPos(v, 1), jointPos(v, 2), c)
     cv2.line(img, jointPos(v, 2), jointPos(v, 3), c)
