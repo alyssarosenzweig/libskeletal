@@ -35,8 +35,6 @@ TRAINING = False
 SAVE     = True
 SIZE     = 64
 
-ME = None
-
 # initialize background subtraction
 if LIVE:
     stream = cv2.VideoCapture(0)
@@ -54,9 +52,7 @@ def gammamat(mats):
     return 0*np.float32(gray) + np.float32(foreground)*63 + np.float32(skin)*np.float32(foreground)*127
 
 def process(number, training):
-    global ME
-    rgb   = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"), (SIZE, SIZE))
-    ME = rgb
+    rgb = cv2.resize(cv2.imread(prefix + str(number) + "_rgb.png"), (SIZE, SIZE))
     
     if training:
         f = open(prefix + str(number) + "_skeleton.json")
@@ -71,9 +67,7 @@ def bgSubtract(rgb):
     return cv2.threshold(cv2.cvtColor(cv2.absdiff(rgb, bg), cv2.COLOR_BGR2GRAY), 32, 1, cv2.THRESH_BINARY)[1]
 
 def process_stream():
-    global ME
     rgb = cv2.resize(stream.read()[1], (SIZE, SIZE))
-    ME = rgb
     fg = bgSubtract(rgb)
     return (cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY) & fg, skin(rgb), fg, "Cheater!")
 
@@ -163,13 +157,8 @@ def select(w, h, mat, offset, C):
     out[lgrabA(offset[0]):ugrabA(offset[0]), lgrabA(offset[1]):ugrabA(offset[1])] = mat[lgrabB(offset[0]):ugrabB(offset[0]), lgrabB(offset[1]):ugrabB(offset[1])]
     return out
 
-def predict(model, count):
+def predict(img, model, count):
     (clf, offsets) = model
-
-    if LIVE:
-        img = process_stream()
-    else:
-        img = process(COUNT + 3, False)
 
     vis = np.zeros((SIZE, SIZE), dtype=np.uint8)
     samples = np.zeros((SIZE, SIZE, count))
@@ -254,8 +243,13 @@ def visualizeSkeleton(img, v, r, c):
 
 if __name__ == '__main__':
     while True:
-        v = np.abs(predict(model, FEATURES))
-        vis = visualizeSkeleton(ME, v, SIZE / 64, (0, 255, 0))
+        if LIVE:
+            img = process_stream()
+        else:
+            img = process(COUNT + 3, False)
+
+        v = np.abs(predict(img, model, FEATURES))
+        vis = visualizeSkeleton(img[0], v, SIZE / 64, (0, 255, 0))
         cv2.imshow("Visualization", cv2.resize(vis, (512, 512)))
 
         if cv2.waitKey(1) == 27:
