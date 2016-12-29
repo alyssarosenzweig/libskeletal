@@ -86,25 +86,10 @@ def generateFeatures(count):
 JOINTS = ["head", "lshoulder", "lelbow", "lhand", "rshoulder", "relbow", "rhand", "hip", "lpelvis", "lknee", "lfoot", "rpelvis", "rknee", "rfoot"]
 
 def serialize_skeleton(skeleton):
-    out = []
-    
-    for joint in JOINTS:
-        out.append(skeleton[joint][0])
-        out.append(skeleton[joint][1])
+    return list(chain.from_iterable(skeleton[joint] for joint in JOINTS))
 
-    return out
-
-def unserialize_skeleton(skeleton):
-    out = {}
-
-    count = 0
-    for joint in JOINTS:
-        out[joint][0] = skeleton[count]
-        out[joint][1] = skeleton[count + 1]
-
-        count = count + 2
-
-    return out
+def unserialize_skeleton(skel):
+    return {j: (skel[i*2], skel[i*2 + 1]) for i, j in enumerate(skel)}
 
 X = np.zeros((SIZE * SIZE * COUNT, FEATURES))
 Y = np.zeros((SIZE * SIZE * COUNT, len(JOINTS) * 2), dtype=np.float32)
